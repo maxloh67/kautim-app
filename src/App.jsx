@@ -1163,7 +1163,7 @@ export default function App() {
 
   // Clean, Modern Main App
   return (
-    <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: '20px 16px 60px' }}>
+    <div style={{ background: 'var(--paper)', width: '100%', minHeight: '100vh', padding: '20px 16px 60px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -1173,8 +1173,8 @@ export default function App() {
           --stamp: #3B82F6; --line: #E5E7EB; --discord-bg: #313338;
         }
         
-        /* Forces the background to cover the entire screen, removing the black void */
-        html, body, #root { margin: 0; padding: 0; min-height: 100vh; background-color: var(--paper); }
+        /* Forces the background to cover the entire screen and overrides Vite's default flexbox */
+        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: var(--paper); display: block !important; }
         
         /* Overrides the retro fonts across the entire app for a modern SaaS look */
         * { box-sizing: border-box; font-family: 'Inter', sans-serif !important; }
