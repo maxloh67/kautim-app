@@ -1146,13 +1146,14 @@ export default function App() {
   function goToMessage(billId) { setMessagePresetBill(billId); setView('message'); }
   function goToLedger() { setView('ledger'); }
 
-  // Login Screen
+  // Clean, Modern Login Screen
   if (!authUser) {
     return (
-      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F6F1E4' }}>
-        <div style={{ background: '#fff', border: '1.5px solid #D8CDB4', borderRadius: '14px', padding: '40px', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", margin: '0 0 20px 0', color: '#211D18', fontSize: '27px' }}>Kautim<span style={{ color: '#C97A14' }}>.</span></h2>
-          <button onClick={handleLogin} style={{ padding: '12px 24px', borderRadius: '10px', cursor: 'pointer', background: '#211D18', color: '#F6F1E4', border: 'none', fontWeight: '600', fontFamily: "'Space Grotesk', sans-serif", fontSize: '14px' }}>
+      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', margin: 0 }}>
+        <style>{`html, body, #root { margin: 0; padding: 0; min-height: 100vh; background: #F9FAFB; font-family: 'Inter', sans-serif; }`}</style>
+        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px', padding: '40px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ margin: '0 0 20px 0', color: '#111827', fontSize: '27px', fontWeight: 700 }}>Kautim<span style={{ color: '#3B82F6' }}>.</span></h2>
+          <button onClick={handleLogin} style={{ padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', background: '#111827', color: '#fff', border: 'none', fontWeight: '600', fontSize: '14px', transition: 'all 0.2s' }}>
             Login with Google
           </button>
         </div>
@@ -1160,37 +1161,54 @@ export default function App() {
     );
   }
 
-  // Main App
+  // Clean, Modern Main App
   return (
-    <div style={{ background: 'var(--paper)', minHeight: '100%', padding: '20px 16px 60px' }}>
+    <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: '20px 16px 60px' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
         :root {
-          --paper: #F6F1E4; --paper-dim: #ECE4D0; --ink: #211D18; --ink-soft: #5C5448;
-          --owe: #A8361F; --owe-bg: #F4DCD3; --settled: #2E5C3E; --settled-bg: #DCE8DD;
-          --stamp: #C97A14; --line: #D8CDB4; --discord-bg: #313338;
+          --paper: #F9FAFB; --paper-dim: #F3F4F6; --ink: #111827; --ink-soft: #6B7280;
+          --owe: #EF4444; --owe-bg: #FEE2E2; --settled: #10B981; --settled-bg: #D1FAE5;
+          --stamp: #3B82F6; --line: #E5E7EB; --discord-bg: #313338;
         }
-        * { box-sizing: border-box; }
-        .ki-card { background: #fff; border: 1.5px solid var(--line); border-radius: 14px; padding: 16px; }
-        .ki-card-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14.5px; color: var(--ink); margin-bottom: 12px; }
-        .ki-section-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
-        .ki-input:focus, select:focus, textarea:focus { border-color: var(--ink) !important; outline: 2px solid var(--stamp); outline-offset: 1px; }
+        
+        /* Forces the background to cover the entire screen, removing the black void */
+        html, body, #root { margin: 0; padding: 0; min-height: 100vh; background-color: var(--paper); }
+        
+        /* Overrides the retro fonts across the entire app for a modern SaaS look */
+        * { box-sizing: border-box; font-family: 'Inter', sans-serif !important; }
+        
+        .ki-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .ki-card-title { font-weight: 600; font-size: 16px; color: var(--ink); margin-bottom: 16px; }
+        .ki-section-title { font-weight: 600; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+        
+        .ki-input:focus, select:focus, textarea:focus { border-color: var(--stamp) !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         button:focus-visible { outline: 2px solid var(--stamp); outline-offset: 2px; }
+        
+        /* Hides the ugly native scrollbar on the navigation tabs */
+        nav::-webkit-scrollbar { display: none; }
+        nav { -ms-overflow-style: none; scrollbar-width: none; }
+        
         .ki-tab:hover span { color: var(--ink) !important; }
         .ki-add-item:hover { border-color: var(--ink) !important; color: var(--ink) !important; }
         .ki-chip:hover { border-color: var(--ink) !important; }
-        .dot-leader { flex: 1; border-bottom: 1.5px dotted var(--line); margin-bottom: 4px; min-width: 16px; }
-        .receipt-divider { border-top: 1.5px dashed var(--line); }
-        .receipt-line + .receipt-line { border-top: 1px dashed var(--line); }
-        .stamp-badge { transform: rotate(-1.5deg); }
-        ::placeholder { color: var(--ink-soft); opacity: 0.45; }
-        select { width: 100%; padding: 9px 11px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff; color: var(--ink); font-size: 14px; font-family: 'Inter', sans-serif; }
-        textarea { font-size: 14px; }
+        
+        .dot-leader { flex: 1; border-bottom: 1px dashed var(--line); margin-bottom: 4px; min-width: 16px; }
+        .receipt-divider { border-top: 1px solid var(--line); margin: 16px 0; }
+        .receipt-line + .receipt-line { border-top: 1px solid var(--line); margin-top: 16px; }
+        
+        .stamp-badge { transform: rotate(0deg); border: 1px solid !important; border-radius: 6px !important; }
+        ::placeholder { color: var(--ink-soft); opacity: 0.5; }
+        select, textarea, .ki-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        
         @keyframes ki-spin { to { transform: rotate(360deg); } }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
+
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <Header view={view} setView={setView} onRefresh={refresh} refreshing={refreshing} />
+
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, color: 'var(--ink-soft)', fontSize: 14, padding: '40px 0', justifyContent: 'center' }}>
             Loading the tab...
