@@ -259,6 +259,7 @@ function PeopleView({ data, mutate, myId, setMyId }) {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editDiscord, setEditDiscord] = useState('');
+  const [editQrCode, setEditQrCode] = useState('');
   const [error, setError] = useState('');
 
   const referencedIds = useMemo(() => {
@@ -277,7 +278,7 @@ function PeopleView({ data, mutate, myId, setMyId }) {
       setError(`${trimmed} is already on the roster.`);
       return;
     }
-    const next = { ...data, roster: [...data.roster, { id: uid(), name: trimmed, discordId: discordId.trim() }] };
+    const next = { ...data, roster: [...data.roster, { id: uid(), name: trimmed, discordId: discordId.trim(), qrCode: '' }] };
     mutate(next);
     setName(''); setDiscordId(''); setError('');
   }
@@ -289,16 +290,28 @@ function PeopleView({ data, mutate, myId, setMyId }) {
   }
 
   function startEdit(p) {
-    setEditingId(p.id); setEditName(p.name); setEditDiscord(p.discordId || '');
+    setEditingId(p.id);
+    setEditName(p.name);
+    setEditDiscord(p.discordId || '');
+    setEditQrCode(p.qrCode || '');
   }
+
   function saveEdit() {
     const trimmed = editName.trim();
     if (!trimmed) return;
     mutate({
       ...data,
-      roster: data.roster.map(r => r.id === editingId ? { ...r, name: trimmed, discordId: editDiscord.trim() } : r),
+      roster: data.roster.map(r => r.id === editingId ? { ...r, name: trimmed, discordId: editDiscord.trim(), qrCode: editQrCode } : r),
     });
     setEditingId(null);
+  }
+
+  function handleQrUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setEditQrCode(reader.result);
+    reader.readAsDataURL(file);
   }
 
   return (
@@ -337,20 +350,28 @@ function PeopleView({ data, mutate, myId, setMyId }) {
             {data.roster.map(p => (
               <div key={p.id} className="ki-card" style={{ padding: '11px 14px' }}>
                 {editingId === p.id ? (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
-                    <TextInput value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
-                    <TextInput value={editDiscord} onChange={e => setEditDiscord(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Discord ID" />
-                    <GhostButton onClick={saveEdit}>Save</GhostButton>
-                    <IconButton icon={X} label="Cancel" onClick={() => setEditingId(null)} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
+                      <TextInput value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
+                      <TextInput value={editDiscord} onChange={e => setEditDiscord(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Discord ID" />
+                      <GhostButton onClick={saveEdit}>Save</GhostButton>
+                      <IconButton icon={X} label="Cancel" onClick={() => setEditingId(null)} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '12px', color: 'var(--ink-soft)' }}>
+                      <strong>Payment QR:</strong>
+                      <input type="file" accept="image/*" onChange={handleQrUpload} style={{ fontSize: '12px' }} />
+                      {editQrCode && <span style={{ color: 'var(--settled)', fontWeight: 'bold' }}>✓ Uploaded</span>}
+                    </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 999, background: 'var(--paper-dim)', border: '1.5px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 12.5, color: 'var(--ink-soft)', flexShrink: 0 }}>{p.name.slice(0, 1).toUpperCase()}</div>
+                      <div style={{ width: 30, height: 30, borderRadius: 999, background: 'var(--paper-dim)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12.5, color: 'var(--ink-soft)', flexShrink: 0 }}>{p.name.slice(0, 1).toUpperCase()}</div>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
                           {p.name}
                           {myId === p.id && <span style={{ fontSize: 10.5, color: 'var(--stamp)', fontWeight: 700 }}>YOU</span>}
+                          {p.qrCode && <QrCode size={12} color="var(--stamp)" title="Has QR Code" />}
                         </div>
                         {p.discordId ? (
                           <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -781,17 +802,23 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
   );
 }
 
-function QRCodeModal({ payerName, amount, onClose }) {
-  const payload = `DuitNow_Transfer_To_${encodeURIComponent(payerName)}_RM${amount}`;
+function QRCodeModal({ payer, amount, onClose }) {
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
       <div className="ki-card" style={{ padding: 24, textAlign: 'center', width: 280 }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Pay {payerName}</div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Pay {payer.name}</div>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 24, color: 'var(--stamp)', fontWeight: 700, marginBottom: 16 }}>{fmt(amount)}</div>
-        <div style={{ background: '#fff', padding: 12, border: '1.5px solid var(--line)', borderRadius: 12, display: 'inline-block', marginBottom: 16 }}>
-          {/* Using public QR API to dynamically generate DuitNow/TNG placeholder */}
-          <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${payload}`} alt="DuitNow QR Code" style={{ display: 'block', width: 200, height: 200 }} />
+
+        <div style={{ background: '#fff', padding: 12, border: '1px solid var(--line)', borderRadius: 12, display: 'inline-block', marginBottom: 16 }}>
+          {payer.qrCode ? (
+            <img src={payer.qrCode} alt={`${payer.name}'s QR Code`} style={{ display: 'block', width: 200, height: 200, objectFit: 'contain' }} />
+          ) : (
+            <div style={{ width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-dim)', color: 'var(--ink-soft)', fontSize: 13, padding: 20 }}>
+              No QR code uploaded.<br /><br />Edit {payer.name} in the People tab to add one!
+            </div>
+          )}
         </div>
+
         <GhostButton onClick={onClose} style={{ width: '100%', justifyContent: 'center' }}>Close</GhostButton>
       </div>
     </div>
@@ -812,7 +839,7 @@ function LedgerView({ data, mutate, roster, goToMessage }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      {activeQR && <QRCodeModal payerName={activeQR.name} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
+      {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
 
       <div>
         <div className="ki-section-title">Who owes who</div>
@@ -821,7 +848,8 @@ function LedgerView({ data, mutate, roster, goToMessage }) {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
             {ledger.map(p => {
-              const payerName = personName(roster, p.payerId);
+              const payerObj = roster.find(r => r.id === p.payerId);
+              const payerName = payerObj ? payerObj.name : 'Unknown';
               return (
                 <div key={`${p.debtorId}__${p.payerId}`} className="ki-card" style={{ padding: '13px 15px' }}>
                   <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
@@ -831,7 +859,7 @@ function LedgerView({ data, mutate, roster, goToMessage }) {
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 19, color: 'var(--owe)' }}>
                       {fmt(p.amount)}
                     </div>
-                    <IconButton icon={QrCode} label="Show QR to Pay" onClick={() => setActiveQR({ name: payerName, amount: p.amount })} />
+                    <IconButton icon={QrCode} label="Show QR to Pay" onClick={() => setActiveQR({ payer: payerObj, amount: p.amount })} />
                   </div>
                 </div>
               );
@@ -851,213 +879,6 @@ function LedgerView({ data, mutate, roster, goToMessage }) {
             ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-/* ----------------------------- Message view ----------------------------- */
-
-const TONE_COPY = {
-  polite: { label: 'Polite', plea: "If you get a chance, please settle this up whenever's convenient — thank you!" },
-  default: { label: 'Default', plea: "Please settle up when you get a chance — let's not let this drag on." },
-  savage: { label: 'Savage', plea: 'Failure to settle within the deadline below will result in **public reminders** until this is resolved.' },
-};
-
-function buildMessage({ title, scopeLines, totalOwed, deadline, tone, extraNotes, signOff }) {
-  const lines = [];
-  lines.push(`# ${title}`);
-  lines.push('');
-  const mentionList = scopeLines.map(l => l.mentionToken).join(' ');
-  lines.push(`Hey ${mentionList},`);
-  lines.push('');
-  lines.push(TONE_COPY[tone].plea);
-  lines.push('');
-  scopeLines.forEach(l => {
-    lines.push(`**${l.name}** — RM ${l.remaining.toFixed(2)}`);
-    lines.push(`-# ${l.breakdown}`);
-  });
-  lines.push('');
-  lines.push(`**Total outstanding: RM ${totalOwed.toFixed(2)}**`);
-  lines.push('');
-  if (deadline.trim()) lines.push(`Please settle within **${deadline.trim()}**.`);
-  if (extraNotes.trim()) { lines.push(''); lines.push(extraNotes.trim()); }
-  lines.push('');
-  lines.push('Kind regards,');
-  lines.push(`-# ${signOff.trim() || 'Whoever paid'}`);
-  return lines.join('\n');
-}
-
-function MessagePreview({ text }) {
-  const renderInline = (s) => {
-    const parts = s.split(/(\*\*[^*]+\*\*)/g);
-    return parts.map((p, i) => p.startsWith('**') && p.endsWith('**') ? <strong key={i} style={{ fontWeight: 700 }}>{p.slice(2, -2)}</strong> : <span key={i}>{p}</span>);
-  };
-  return (
-    <div style={{ background: 'var(--discord-bg)', borderRadius: 12, padding: '16px 18px', fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, lineHeight: 1.7, color: '#DBDEE1', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-      {text.split('\n').map((line, i) => {
-        if (line.startsWith('# ')) return <div key={i} style={{ fontWeight: 700, fontSize: 16, color: '#fff', marginBottom: 2 }}>{line.slice(2)}</div>;
-        if (line.startsWith('-# ')) return <div key={i} style={{ fontSize: 11.5, color: '#949BA4' }}>{renderInline(line.slice(3))}</div>;
-        if (line.trim() === '') return <div key={i} style={{ height: 8 }} />;
-        return <div key={i}>{renderInline(line)}</div>;
-      })}
-    </div>
-  );
-}
-
-function MessageView({ data, roster, presetBillId }) {
-  const billsWithBalance = useMemo(() => data.bills.filter(b => !isBillSettled(b)), [data.bills]);
-  const ledger = useMemo(() => computeLedger(data), [data]);
-  const payerOptions = useMemo(() => {
-    const ids = new Set(ledger.map(p => p.payerId));
-    return roster.filter(r => ids.has(r.id));
-  }, [ledger, roster]);
-
-  const [scopeType, setScopeType] = useState(presetBillId ? 'bill' : (billsWithBalance[0] ? 'bill' : 'payer'));
-  const [billId, setBillId] = useState(presetBillId || (billsWithBalance[0] ? billsWithBalance[0].id : ''));
-  const [payerId, setPayerId] = useState(payerOptions[0] ? payerOptions[0].id : '');
-  const [title, setTitle] = useState('Dinner Receipt');
-  const [deadline, setDeadline] = useState('3 days');
-  const [tone, setTone] = useState('default');
-  const [extraNotes, setExtraNotes] = useState('');
-  const [signOff, setSignOff] = useState('');
-
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [sendingWebhook, setSendingWebhook] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => { if (presetBillId) { setScopeType('bill'); setBillId(presetBillId); } }, [presetBillId]);
-
-  useEffect(() => {
-    if (scopeType === 'bill' && billId) {
-      const b = data.bills.find(x => x.id === billId);
-      if (b) setTitle(b.title);
-      if (b) setSignOff(personName(roster, b.payerId));
-    } else if (scopeType === 'payer' && payerId) {
-      setTitle('Outstanding Balances');
-      setSignOff(personName(roster, payerId));
-    }
-  }, [scopeType, billId, payerId]);
-
-  const scopeLines = useMemo(() => {
-    if (scopeType === 'bill') {
-      const bill = data.bills.find(b => b.id === billId);
-      if (!bill) return [];
-      const { perPerson } = computeBill(bill);
-      return Object.entries(perPerson)
-        .filter(([pid, p]) => pid !== bill.payerId && round2(p.remaining) > 0.004)
-        .map(([pid, p]) => {
-          const person = roster.find(r => r.id === pid);
-          return {
-            name: person ? person.name : 'Unknown',
-            mentionToken: person && person.discordId ? `<@${person.discordId}>` : `@${person ? person.name : 'Unknown'}`,
-            remaining: p.remaining,
-            breakdown: `food ${fmt(p.subtotal)} + tax ${fmt(p.tax)} + service ${fmt(p.service)}${p.paid > 0 ? ` · already paid ${fmt(p.paid)}` : ''}`,
-          };
-        });
-    }
-    return ledger.filter(p => p.payerId === payerId).map(p => {
-      const person = roster.find(r => r.id === p.debtorId);
-      return {
-        name: person ? person.name : 'Unknown',
-        mentionToken: person && person.discordId ? `<@${person.discordId}>` : `@${person ? person.name : 'Unknown'}`,
-        remaining: p.amount,
-        breakdown: `across ${p.billIds.length} bill${p.billIds.length === 1 ? '' : 's'}`,
-      };
-    });
-  }, [scopeType, billId, payerId, data.bills, ledger, roster]);
-
-  const totalOwed = round2(scopeLines.reduce((s, l) => s + l.remaining, 0));
-  const messageText = useMemo(() => buildMessage({ title: title || 'Dinner Receipt', scopeLines, totalOwed, deadline, tone, extraNotes, signOff }),
-    [title, scopeLines, totalOwed, deadline, tone, extraNotes, signOff]);
-
-  async function copyMessage() {
-    try {
-      await navigator.clipboard.writeText(messageText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (e) { }
-  }
-
-  async function sendToDiscordWebhook() {
-    if (!webhookUrl) return alert('Please enter a Discord Webhook URL first.');
-    setSendingWebhook(true);
-    try {
-      const res = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: messageText })
-      });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      alert("Successfully sent to Discord!");
-    } catch (e) {
-      alert("Failed to send webhook: " + e.message);
-    }
-    setSendingWebhook(false);
-  }
-
-  if (data.bills.length === 0) {
-    return <EmptyState icon={MessageSquare} title="Nothing to message yet" body="Save a bill first, then come back here to draft the nag." />;
-  }
-  if (scopeLines.length === 0) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <ScopePicker {...{ scopeType, setScopeType, billsWithBalance, billId, setBillId, payerOptions, payerId, setPayerId, roster }} />
-        <EmptyState icon={Check} title="Nothing outstanding here" body="Everyone in this scope is already settled up — pick a different bill or payer above." />
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <ScopePicker {...{ scopeType, setScopeType, billsWithBalance, billId, setBillId, payerOptions, payerId, setPayerId, roster }} />
-
-      <div className="ki-card">
-        <div className="ki-card-title">Message details</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-          <Field label="Title">
-            <TextInput value={title} onChange={e => setTitle(e.target.value)} />
-          </Field>
-          <Field label="Deadline">
-            <TextInput value={deadline} onChange={e => setDeadline(e.target.value)} placeholder="e.g. 3 days" />
-          </Field>
-        </div>
-        <Field label="Tone">
-          <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-            {Object.entries(TONE_COPY).map(([key, t]) => (
-              <button key={key} onClick={() => setTone(key)} style={{ padding: '7px 13px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: tone === key ? '1.5px solid var(--ink)' : '1.5px solid var(--line)', background: tone === key ? 'var(--ink)' : '#fff', color: tone === key ? 'var(--paper)' : 'var(--ink-soft)' }}>{t.label}</button>
-            ))}
-          </div>
-        </Field>
-        <div style={{ height: 10 }} />
-        <Field label="Extra notes (optional)" hint="Your own jokes, threats, or context go here — not auto-generated">
-          <textarea value={extraNotes} onChange={e => setExtraNotes(e.target.value)} rows={3} placeholder="e.g. specific inside jokes about who keeps forgetting to pay…" style={{ ...inputStyle, fontFamily: "'Inter', sans-serif", resize: 'vertical' }} />
-        </Field>
-        <div style={{ height: 10 }} />
-        <Field label="Sign-off name">
-          <TextInput value={signOff} onChange={e => setSignOff(e.target.value)} />
-        </Field>
-      </div>
-
-      <div className="ki-card">
-        <div className="ki-card-title">Discord Webhook Integration</div>
-        <Field label="Webhook URL" hint="Paste your Discord channel webhook URL here to send directly">
-          <TextInput value={webhookUrl} onChange={e => setWebhookUrl(e.target.value)} placeholder="https://discord.com/api/webhooks/..." />
-        </Field>
-      </div>
-
-      <div>
-        <div className="ki-card-title" style={{ marginBottom: 8 }}>Preview</div>
-        <MessagePreview text={messageText} />
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
-          <GhostButton onClick={copyMessage} icon={copied ? Check : Copy} style={{ justifyContent: 'center' }}>
-            {copied ? 'Copied to clipboard' : 'Copy Message'}
-          </GhostButton>
-          <PrimaryButton onClick={sendToDiscordWebhook} icon={Send} loading={sendingWebhook} disabled={!webhookUrl}>
-            Send to Discord
-          </PrimaryButton>
-        </div>
       </div>
     </div>
   );
