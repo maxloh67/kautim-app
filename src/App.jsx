@@ -1,3 +1,6 @@
+import { auth, db, googleProvider } from './firebase';
+import { signInWithPopup } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import {
@@ -29,24 +32,25 @@ function emptyData() { return { roster: [], bills: [] }; }
   import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
   import { db } from "./firebase-config";
 */
-async function loadData() {
-  if (typeof window === 'undefined' || !window.storage) return emptyData();
+async function loadData(userId) {
+  if (!userId) return emptyData();
   try {
-    const res = await window.storage.get(DATA_KEY, true);
-    if (res && res.value) {
-      const parsed = JSON.parse(res.value);
+    const docSnap = await getDoc(doc(db, "users", userId));
+    if (docSnap.exists()) {
+      const parsed = docSnap.data();
       return { roster: parsed.roster || [], bills: parsed.bills || [] };
     }
-  } catch (e) { }
+  } catch (e) { console.error(e); }
   return emptyData();
 }
-async function persistData(data) {
-  if (typeof window === 'undefined' || !window.storage) return false;
+
+async function persistData(userId, data) {
+  if (!userId) return;
   try {
-    await window.storage.set(DATA_KEY, JSON.stringify(data), true);
-    return true;
-  } catch (e) { console.error('Kautim: save failed', e); return false; }
+    await setDoc(doc(db, "users", userId), data);
+  } catch (e) { console.error(e); }
 }
+
 async function loadIdentity() {
   if (typeof window === 'undefined' || !window.storage) return null;
   try {
@@ -1083,54 +1087,84 @@ function ScopePicker({ scopeType, setScopeType, billsWithBalance, billId, setBil
 /* ----------------------------- App shell ----------------------------- */
 
 export default function App() {
+  const [authUser, setAuthUser] = useState(null);
   const [data, setData] = useState(emptyData());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [myId, setMyIdState] = useState(null);
   const [view, setView] = useState('ledger');
-  const [storageOk, setStorageOk] = useState(true);
   const [messagePresetBill, setMessagePresetBill] = useState(null);
 
+  const handleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      setAuthUser(result.user);
+    } catch (error) {
+      console.error("Login failed", error);
+    }
+  };
+
   const refresh = useCallback(async () => {
+    if (!authUser) return;
     setRefreshing(true);
-    const d = await loadData();
+    const d = await loadData(authUser.uid);
     setData(d);
     setRefreshing(false);
-  }, []);
+  }, [authUser]);
 
   useEffect(() => {
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
-      if (typeof window === 'undefined' || !window.storage) setStorageOk(false);
-      const [d, identity] = await Promise.all([loadData(), loadIdentity()]);
-      if (!cancelled) { setData(d); setMyIdState(identity); setLoading(false); }
+      setLoading(true);
+      const d = await loadData(authUser.uid);
+      const localId = localStorage.getItem('kautim-identity');
+      if (!cancelled) {
+        setData(d);
+        setMyIdState(localId ? JSON.parse(localId).personId : null);
+        setLoading(false);
+      }
     })();
     const onFocus = () => refresh();
     window.addEventListener('focus', onFocus);
     return () => { cancelled = true; window.removeEventListener('focus', onFocus); };
-  }, [refresh]);
+  }, [authUser, refresh]);
 
   const mutate = useCallback((next) => {
     setData(next);
-    persistData(next);
-  }, []);
+    if (authUser) persistData(authUser.uid, next);
+  }, [authUser]);
 
   const setMyId = useCallback((id) => {
     setMyIdState(id);
-    persistIdentity(id);
+    localStorage.setItem('kautim-identity', JSON.stringify({ personId: id }));
   }, []);
 
-  function goToMessage(billId) {
-    setMessagePresetBill(billId);
-    setView('message');
-  }
+  function goToMessage(billId) { setMessagePresetBill(billId); setView('message'); }
   function goToLedger() { setView('ledger'); }
 
+  // Login Screen
+  if (!authUser) {
+    return (
+      <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F6F1E4' }}>
+        <div style={{ background: '#fff', border: '1.5px solid #D8CDB4', borderRadius: '14px', padding: '40px', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", margin: '0 0 20px 0', color: '#211D18', fontSize: '27px' }}>Kautim<span style={{ color: '#C97A14' }}>.</span></h2>
+          <button onClick={handleLogin} style={{ padding: '12px 24px', borderRadius: '10px', cursor: 'pointer', background: '#211D18', color: '#F6F1E4', border: 'none', fontWeight: '600', fontFamily: "'Space Grotesk', sans-serif", fontSize: '14px' }}>
+            Login with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main App
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100%', padding: '20px 16px 60px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
         :root {
           --paper: #F6F1E4; --paper-dim: #ECE4D0; --ink: #211D18; --ink-soft: #5C5448;
           --owe: #A8361F; --owe-bg: #F4DCD3; --settled: #2E5C3E; --settled-bg: #DCE8DD;
@@ -1155,19 +1189,11 @@ export default function App() {
         @keyframes ki-spin { to { transform: rotate(360deg); } }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
-
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         <Header view={view} setView={setView} onRefresh={refresh} refreshing={refreshing} />
-
-        {!storageOk && (
-          <div style={{ padding: '10px 14px', borderRadius: 10, background: 'var(--owe-bg)', color: 'var(--owe)', fontSize: 12.5, marginBottom: 16 }}>
-            Storage isn't available in this preview, so nothing will be saved. Open this from a regular conversation to keep your data.
-          </div>
-        )}
-
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, color: 'var(--ink-soft)', fontSize: 14, padding: '40px 0', justifyContent: 'center' }}>
-            <Loader2 size={17} style={{ animation: 'ki-spin 0.8s linear infinite' }} /> Loading the tab…
+            Loading the tab...
           </div>
         ) : (
           <>
