@@ -732,6 +732,12 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
   const summary = useMemo(() => computeBill(bill), [bill]);
   const settled = isBillSettled(bill);
 
+  function copyShareLink() {
+    const url = `${window.location.origin}${window.location.pathname}?share=${auth.currentUser.uid}&bill=${bill.id}`;
+    navigator.clipboard.writeText(url);
+    alert("Share link copied to clipboard!");
+  }
+
   return (
     <div className="ki-card receipt-card">
       <button onClick={() => setOpen(o => !o)} style={{ all: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer', boxSizing: 'border-box' }}>
@@ -761,26 +767,31 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 14 }}>
-            {Object.entries(summary.perPerson).map(([pid, p]) => (
-              <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 11px', borderRadius: 9, background: 'var(--paper-dim)', fontSize: 13 }}>
-                <div>
-                  <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
-                    {personName(roster, pid)} {pid === bill.payerId && <span style={{ fontSize: 10, color: 'var(--stamp)', fontWeight: 700 }}>PAYER</span>}
+            {Object.entries(summary.perPerson).map(([pid, p]) => {
+              const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
+              const isDeficit = p.remaining < -0.004;
+              
+              return (
+                <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 11px', borderRadius: 9, background: 'var(--paper-dim)', fontSize: 13 }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
+                      {personName(roster, pid)} {pid === bill.payerId && <span style={{ fontSize: 10, color: 'var(--stamp)', fontWeight: 700 }}>PAYER</span>}
+                    </div>
+                    {pid !== bill.payerId && (
+                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace" }}>
+                        food {fmt(p.subtotal)} + tax {fmt(p.tax)} + service {fmt(p.service)}
+                        {p.paid > 0 && ` · paid ${fmt(p.paid)}`}
+                      </div>
+                    )}
                   </div>
                   {pid !== bill.payerId && (
-                    <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace" }}>
-                      food {fmt(p.subtotal)} + tax {fmt(p.tax)} + service {fmt(p.service)}
-                      {p.paid > 0 && ` · paid ${fmt(p.paid)}`}
-                    </div>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: isDeficit ? 'var(--stamp)' : isSettled ? 'var(--settled)' : 'var(--owe)' }}>
+                      {isDeficit ? `DEFICIT ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : fmt(p.remaining)}
+                    </span>
                   )}
                 </div>
-                {pid !== bill.payerId && (
-                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: round2(p.remaining) <= 0.004 ? 'var(--settled)' : 'var(--owe)' }}>
-                    {round2(p.remaining) <= 0.004 ? 'Paid' : fmt(p.remaining)}
-                  </span>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {!settled && (
@@ -793,6 +804,7 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
           )}
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <GhostButton icon={Copy} onClick={copyShareLink}>Copy Share Link</GhostButton>
             <GhostButton icon={MessageSquare} onClick={() => onMessageThis(bill.id)}>Draft a message</GhostButton>
             <GhostButton icon={Trash2} onClick={() => onDelete(bill.id)} style={{ color: 'var(--owe)', borderColor: 'var(--owe-bg)' }}>Delete</GhostButton>
           </div>
@@ -906,6 +918,108 @@ function ScopePicker({ scopeType, setScopeType, billsWithBalance, billId, setBil
 }
 
 /* ----------------------------- App shell ----------------------------- */
+function SharedBillView({ shareUserId, shareBillId }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeQR, setActiveQR] = useState(null);
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    async function fetchShared() {
+      try {
+        const docSnap = await getDoc(doc(db, "users", shareUserId));
+        if (docSnap.exists()) {
+          setData(docSnap.data());
+        }
+      } catch (e) { console.error(e); }
+      setLoading(false);
+    }
+    fetchShared();
+  }, [shareUserId]);
+
+  if (loading) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>Loading bill...</div>;
+  if (!data) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>Bill not found.</div>;
+
+  const bill = (data.bills || []).find(b => b.id === shareBillId);
+  const roster = data.roster || [];
+  if (!bill) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>Bill has been deleted.</div>;
+
+  const summary = computeBill(bill);
+  const payer = roster.find(r => r.id === bill.payerId);
+
+  async function markSelfPaid(personId, amount) {
+    setProcessing(true);
+    try {
+      const docRef = doc(db, "users", shareUserId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const currentData = docSnap.data();
+        const updatedBills = currentData.bills.map(b => {
+          if (b.id === shareBillId) {
+            return { ...b, payments: [...(b.payments || []), { id: uid(), personId, amount, method: 'Shared Link (Self-Marked)', date: todayISO() }] };
+          }
+          return b;
+        });
+        await setDoc(docRef, { ...currentData, bills: updatedBills });
+        setData({ ...currentData, bills: updatedBills }); // Update local UI
+      }
+    } catch (e) { alert("Failed to log payment."); }
+    setProcessing(false);
+  }
+
+  return (
+    <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: '20px 16px', display: 'block', width: '100%' }}>
+      <style>{`
+        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: #F9FAFB; font-family: 'Inter', sans-serif; display: block !important; }
+        * { box-sizing: border-box; }
+        .ki-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 16px; }
+      `}</style>
+      
+      {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
+
+      <div style={{ maxWidth: 500, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h2 style={{ margin: '0 0 8px 0', color: '#111827', fontSize: '24px', fontWeight: 700 }}>{bill.title}</h2>
+          <div style={{ fontSize: 14, color: '#6B7280' }}>Paid by <strong>{payer?.name}</strong> • {niceDate(bill.date)}</div>
+        </div>
+
+        <div className="ki-card">
+          <div style={{ fontWeight: 600, marginBottom: 16, color: '#111827' }}>Who owes what:</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {Object.entries(summary.perPerson).map(([pid, p]) => {
+              if (pid === bill.payerId) return null;
+              const person = roster.find(r => r.id === pid);
+              const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
+              const isDeficit = p.remaining < -0.004;
+              
+              return (
+                <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '8px', background: '#F3F4F6' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#111827' }}>{person?.name}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280' }}>Total: {fmt(p.totalOwed)}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    <div style={{ fontWeight: 700, color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444' }}>
+                      {isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : `Owes: ${fmt(p.remaining)}`}
+                    </div>
+                    {!isSettled && !isDeficit && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => setActiveQR({ payer, amount: p.remaining })} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB', cursor: 'pointer' }}>View QR</button>
+                        <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processing} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#111827', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                          Mark Paid
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [authUser, setAuthUser] = useState(null);
@@ -915,6 +1029,13 @@ export default function App() {
   const [myId, setMyIdState] = useState(null);
   const [view, setView] = useState('ledger');
   const [messagePresetBill, setMessagePresetBill] = useState(null);
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareUserId = urlParams.get('share');
+  const shareBillId = urlParams.get('bill');
+  if (shareUserId && shareBillId) {
+    return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
+  }
+  const [authUser, setAuthUser] = useState(null);
 
   const handleLogin = async () => {
     try {
