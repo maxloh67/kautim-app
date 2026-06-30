@@ -1022,6 +1022,13 @@ function SharedBillView({ shareUserId, shareBillId }) {
 }
 
 export default function App() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareUserId = urlParams.get('share');
+  const shareBillId = urlParams.get('bill');
+
+  if (shareUserId && shareBillId) {
+    return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
+  }
   const [authUser, setAuthUser] = useState(null);
   const [data, setData] = useState(emptyData());
   const [loading, setLoading] = useState(true);
@@ -1029,13 +1036,6 @@ export default function App() {
   const [myId, setMyIdState] = useState(null);
   const [view, setView] = useState('ledger');
   const [messagePresetBill, setMessagePresetBill] = useState(null);
-  const urlParams = new URLSearchParams(window.location.search);
-  const shareUserId = urlParams.get('share');
-  const shareBillId = urlParams.get('bill');
-  if (shareUserId && shareBillId) {
-    return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
-  }
-  const [authUser, setAuthUser] = useState(null);
 
   const handleLogin = async () => {
     try {
