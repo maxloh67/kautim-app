@@ -10,9 +10,6 @@ import {
 } from 'lucide-react';
 
 /* ----------------------------- helpers ----------------------------- */
-
-const DATA_KEY = 'kautim-data';
-const IDENTITY_KEY = 'kautim-identity';
 const DEFAULT_TAX = 6;
 const DEFAULT_SERVICE = 10;
 
@@ -1129,11 +1126,6 @@ export default function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const shareUserId = urlParams.get('share');
   const shareBillId = urlParams.get('bill');
-
-  if (shareUserId && shareBillId) {
-    return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
-  }
-
   const [authUser, setAuthUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true); // Checks session before rendering
   const [data, setData] = useState(emptyData());
