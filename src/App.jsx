@@ -735,8 +735,29 @@ function PaymentForm({ roster, bill, onAdd }) {
 
 function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
   const [open, setOpen] = useState(false);
+  const [pendingEdits, setPendingEdits] = useState({}); // { [paymentId]: editedAmountString }
   const summary = useMemo(() => computeBill(bill), [bill]);
   const settled = isBillSettled(bill);
+  function getEditedAmount(pm) {
+    return pendingEdits[pm.id] !== undefined ? pendingEdits[pm.id] : String(pm.amount);
+  }
+
+  function approvePending(pm) {
+    const finalAmount = round2(Number(getEditedAmount(pm)) || 0);
+    onUpdateBill({
+      ...bill,
+      payments: bill.payments.map(p => p.id === pm.id ? { ...p, amount: finalAmount, status: 'approved' } : p)
+    });
+    setPendingEdits(edits => { const next = { ...edits }; delete next[pm.id]; return next; });
+  }
+
+  function rejectPending(pm) {
+    onUpdateBill({
+      ...bill,
+      payments: bill.payments.filter(p => p.id !== pm.id)
+    });
+    setPendingEdits(edits => { const next = { ...edits }; delete next[pm.id]; return next; });
+  }
 
   function copyShareLink() {
     const url = `${window.location.origin}${window.location.pathname}?share=${auth.currentUser.uid}&bill=${bill.id}`;
@@ -764,25 +785,27 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
           <div className="receipt-divider" style={{ marginBottom: 12 }} />
 
           {bill.payments?.filter(pm => pm.status === 'pending').map(pm => (
-            <div key={pm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FEF3C7', borderRadius: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 12.5 }}>
-                {personName(roster, pm.personId)} marked {fmt(pm.amount)} as paid
-              </span>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => onUpdateBill({
-                    ...bill,
-                    payments: bill.payments.map(p => p.id === pm.id ? { ...p, status: 'approved' } : p)
-                  })}
-                  style={{ fontSize: 11, padding: '5px 9px', borderRadius: 6, background: 'var(--settled)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+            <div key={pm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FEF3C7', borderRadius: 8, marginBottom: 8, gap: 10 }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, marginBottom: 6 }}>
+                  {personName(roster, pm.personId)} marked a payment as paid
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>Confirm amount RM</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={getEditedAmount(pm)}
+                    onChange={e => setPendingEdits(edits => ({ ...edits, [pm.id]: e.target.value }))}
+                    style={{ width: 78, padding: '4px 7px', borderRadius: 6, border: '1.5px solid var(--line)', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, textAlign: 'right', background: '#fff' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button onClick={() => approvePending(pm)} style={{ fontSize: 11, padding: '5px 9px', borderRadius: 6, background: 'var(--settled)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                   Approve
                 </button>
-                <button
-                  onClick={() => onUpdateBill({
-                    ...bill,
-                    payments: bill.payments.filter(p => p.id !== pm.id)
-                  })}
-                  style={{ fontSize: 11, padding: '5px 9px', borderRadius: 6, background: 'var(--owe)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                <button onClick={() => rejectPending(pm)} style={{ fontSize: 11, padding: '5px 9px', borderRadius: 6, background: 'var(--owe)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                   Reject
                 </button>
               </div>
