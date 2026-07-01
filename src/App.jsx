@@ -401,7 +401,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
   const [justSaved, setJustSaved] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState('');
-  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   useEffect(() => {
     if (!draft.payerId && myId) setDraft(d => ({ ...d, payerId: myId }));
