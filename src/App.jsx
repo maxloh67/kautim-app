@@ -470,7 +470,6 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
       });
 
       const imageBase64 = await fileToBase64(file);
-
       const scanRes = await fetch('https://us-central1-kautim-6b186.cloudfunctions.net/scanReceipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -517,6 +516,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
       setScanMessage('The receipt scan failed. Please try another photo or enter items manually.');
     } finally {
       setIsScanning(false);
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
