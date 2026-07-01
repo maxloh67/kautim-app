@@ -470,14 +470,19 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
       });
 
       const imageBase64 = await fileToBase64(file);
-      const scanRes = await fetch('https://us-central1-kautim-6b186.cloudfunctions.net/scanReceipt', {
+      const formData = new FormData();
+      formData.append('apikey', 'helloworld');
+      formData.append('language', 'eng');
+      formData.append('base64Image', `data:${file.type || 'image/png'};base64,${imageBase64}`);
+
+      const scanRes = await fetch('https://api.ocr.space/parse/image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 })
+        body: formData,
       });
 
       if (!scanRes.ok) throw new Error('Scan failed');
-      const { text } = await scanRes.json();
+      const data = await scanRes.json();
+      const text = data?.ParsedResults?.[0]?.ParsedText || '';
       const lines = text.split('\n');
       const scannedItems = [];
       const ignoredKeywords = ['total', 'subtotal', 'tax', 'service', 'cash', 'change', 'payment', 'thank', 'visa', 'mastercard', 'card', 'gst', 'sst', 'receipt', 'balance'];
