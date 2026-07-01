@@ -138,7 +138,7 @@ function StampBadge({ kind, children }) {
     ? { color: 'var(--settled)', borderColor: 'var(--settled)', background: 'var(--settled-bg)' }
     : { color: 'var(--owe)', borderColor: 'var(--owe)', background: 'var(--owe-bg)' };
   return (
-    <span className="stamp-badge" style={{ ...styles, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 999, border: '1.5px dashed', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+    <span className="stamp-badge" style={{ ...styles, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 9px', borderRadius: 5, border: '1.5px dashed', fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', transform: 'rotate(-2deg)' }}>
       {children}
     </span>
   );
@@ -1031,17 +1031,21 @@ function SharedBillView({ shareUserId, shareBillId }) {
       {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
 
       <div style={{ maxWidth: '480px', margin: '0 auto', background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}>
-
         {/* Header Section */}
-        <div style={{ background: '#111827', padding: '32px 24px', textAlign: 'center', color: '#fff', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #3B82F6, #10B981, #F59E0B)' }}></div>
-          <div style={{ background: 'rgba(255,255,255,0.1)', display: 'inline-flex', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px' }}>
-            Dinner Receipt
+        <div style={{ background: 'var(--ink)', padding: '32px 24px 40px', textAlign: 'center', color: '#fff', position: 'relative' }}>
+          <div style={{ background: 'rgba(255,255,255,0.1)', display: 'inline-flex', padding: '6px 12px', borderRadius: '5px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', fontFamily: "'Space Grotesk', sans-serif" }}>
+            Shared Bill
           </div>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{bill.title}</h2>
-          <div style={{ fontSize: '14px', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>{bill.title}</h2>
+          <div style={{ fontSize: '14px', color: '#B0AEA6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontFamily: "'IBM Plex Mono', monospace" }}>
             <Receipt size={14} /> {niceDate(bill.date)}
           </div>
+          {/* torn perforation edge */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, bottom: -1, height: 14,
+            background: 'radial-gradient(circle at 10px 0, transparent 9px, #fff 9.5px)',
+            backgroundSize: '20px 14px', backgroundRepeat: 'repeat-x'
+          }} />
         </div>
 
         <div style={{ padding: '24px' }}>
@@ -1263,16 +1267,16 @@ export default function App() {
   return (
     <div style={{ background: 'var(--paper)', width: '100%', minHeight: '100vh', padding: '20px 16px 60px' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        
-        :root {
-          --paper: #F9FAFB; --paper-dim: #F3F4F6; --ink: #111827; --ink-soft: #6B7280;
-          --owe: #EF4444; --owe-bg: #FEE2E2; --settled: #10B981; --settled-bg: #D1FAE5;
-          --stamp: #3B82F6; --line: #E5E7EB;
-        }
-        
-        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: var(--paper); display: block !important; }
-        * { box-sizing: border-box; font-family: 'Inter', sans-serif !important; }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+  
+  :root {
+    --paper: #FAFAF8; --paper-dim: #F1F0EC; --ink: #1A1A1A; --ink-soft: #6B6B63;
+    --owe: #C0392B; --owe-bg: #FBEAE7; --settled: #1E7A4C; --settled-bg: #E3F3EA;
+    --stamp: #2451B5; --stamp-bg: #EAF0FB; --line: #E4E2DB;
+  }
+  
+  html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: var(--paper); display: block !important; }
+  * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
         
         .ki-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
         .ki-card-title { font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 18px; }
