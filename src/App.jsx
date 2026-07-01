@@ -105,11 +105,14 @@ function computeBill(bill) {
 
   Object.keys(perPerson).forEach(pid => {
     const p = perPerson[pid];
-    const paid = round2((bill.payments || [])
-      .filter(pm => pm.personId === pid)
-      .reduce((s, pm) => s + (pm.amount || 0), 0));
-    p.paid = paid;
-    p.remaining = round2(p.totalOwed - paid);
+
+    // Separate approved payments from pending verifications
+    const approvedPayments = (bill.payments || []).filter(pm => pm.personId === pid && pm.status !== 'pending');
+    const pendingPayments = (bill.payments || []).filter(pm => pm.personId === pid && pm.status === 'pending');
+
+    p.paid = round2(approvedPayments.reduce((s, pm) => s + (pm.amount || 0), 0));
+    p.remaining = round2(p.totalOwed - p.paid);
+    p.pendingPayments = pendingPayments; // Attached for UI rendering
   });
 
   return {
@@ -985,11 +988,11 @@ function SharedBillView({ shareUserId, shareBillId }) {
         * { box-sizing: border-box; }
         @keyframes ki-spin { to { transform: rotate(360deg); } }
       `}</style>
-      
+
       {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
 
       <div style={{ maxWidth: '480px', margin: '0 auto', background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}>
-        
+
         {/* Header Section */}
         <div style={{ background: '#111827', padding: '32px 24px', textAlign: 'center', color: '#fff', position: 'relative' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #3B82F6, #10B981, #F59E0B)' }}></div>
@@ -1014,16 +1017,16 @@ function SharedBillView({ shareUserId, shareBillId }) {
           </div>
 
           <div style={{ fontWeight: 600, marginBottom: '16px', color: '#111827', fontSize: '15px' }}>Breakdown</div>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {Object.entries(summary.perPerson).map(([pid, p]) => {
               if (pid === bill.payerId) return null;
               const person = roster.find(r => r.id === pid);
               const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
               const isDeficit = p.remaining < -0.004;
-              
+
               const userItems = bill.items.filter(it => it.assignments.some(a => a.personId === pid && a.amount > 0));
-              
+
               return (
                 <div key={pid} style={{ border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
                   {/* Top Bar */}
@@ -1040,7 +1043,7 @@ function SharedBillView({ shareUserId, shareBillId }) {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Items & Actions Bar */}
                   <div style={{ padding: '16px', background: '#fff' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
