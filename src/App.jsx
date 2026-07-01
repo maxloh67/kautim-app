@@ -982,7 +982,18 @@ function SharedBillView({ shareUserId, shareBillId }) {
         const currentData = docSnap.data();
         const updatedBills = currentData.bills.map(b => {
           if (b.id === shareBillId) {
-            return { ...b, payments: [...(b.payments || []), { id: uid(), personId, amount, method: 'Shared Link', note: 'Self-Marked', date: todayISO() }] };
+            return {
+              ...b,
+              payments: [...(b.payments || []), {
+                id: uid(),
+                personId,
+                amount,
+                method: 'Shared Link',
+                note: 'Self-Marked',
+                date: todayISO(),
+                status: 'pending'
+              }]
+            };
           }
           return b;
         });
