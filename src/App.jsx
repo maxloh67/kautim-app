@@ -964,6 +964,13 @@ function SharedBillView({ shareUserId, shareBillId }) {
   if (!bill) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', color: '#6B7280' }}>Bill has been deleted.</div>;
 
   const summary = computeBill(bill);
+  Object.keys(summary.perPerson).forEach(pid => {
+    const p = summary.perPerson[pid];
+    // Only count payments where status is 'approved'
+    const approved = (bill.payments || []).filter(pm => pm.personId === pid && pm.status === 'approved');
+    p.paid = round2(approved.reduce((s, pm) => s + (pm.amount || 0), 0));
+    p.remaining = round2(p.totalOwed - p.paid);
+  });
   const payer = roster.find(r => r.id === bill.payerId);
 
   async function markSelfPaid(personId, amount) {
@@ -1027,8 +1034,9 @@ function SharedBillView({ shareUserId, shareBillId }) {
             {Object.entries(summary.perPerson).map(([pid, p]) => {
               if (pid === bill.payerId) return null;
               const person = roster.find(r => r.id === pid);
-              const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
-              const isDeficit = p.remaining < -0.004;
+              const hasPending = (bill.payments || []).some(pm => pm.personId === pid && pm.status === 'pending');
+              const isDeficit = !hasPending && (p.remaining < -0.004);
+              const isSettled = !hasPending && (p.remaining <= 0.004 && p.remaining >= -0.004);
 
               const userItems = bill.items.filter(it => it.assignments.some(a => a.personId === pid && a.amount > 0));
 
@@ -1042,10 +1050,8 @@ function SharedBillView({ shareUserId, shareBillId }) {
                         Total: <strong>{fmt(p.totalOwed)}</strong> • Paid: <strong>{fmt(p.paid)}</strong>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                      <div style={{ fontWeight: 700, fontSize: '13px', color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444', background: isDeficit ? '#EFF6FF' : isSettled ? '#D1FAE5' : '#FEE2E2', padding: '6px 10px', borderRadius: '6px' }}>
-                        {isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid ✓' : `Owes: ${fmt(p.remaining)}`}
-                      </div>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: hasPending ? '#F59E0B' : isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444', background: hasPending ? '#FEF3C7' : isDeficit ? '#EFF6FF' : isSettled ? '#D1FAE5' : '#FEE2E2', padding: '6px 10px', borderRadius: '6px' }}>
+                      {hasPending ? 'Pending Verification ⏳' : isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid ✓' : `Owes: ${fmt(p.remaining)}`}
                     </div>
                   </div>
 
