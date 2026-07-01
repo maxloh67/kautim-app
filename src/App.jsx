@@ -228,13 +228,13 @@ function Header({ view, setView, onRefresh, refreshing, authUser, onSignOut }) {
     <div style={{ marginBottom: 24, textAlign: 'center' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
 
-        {/* Profile & Refresh - Moved to a top row to keep header clean */}
-        <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        {/* Profile & Refresh - Updated for better visibility */}
+        <div style={{ display: 'flex', width: '100%', maxWidth: '720px', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, margin: '0 auto' }}>
           <button onClick={onRefresh} title="Refresh" style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer' }}>
             <RefreshCw size={16} style={{ animation: refreshing ? 'ki-spin 0.8s linear infinite' : 'none' }} />
           </button>
 
-          {authUser && (
+          {authUser ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '4px 12px 4px 4px', borderRadius: '20px', border: '1px solid var(--line)' }}>
               <img src={authUser.photoURL || `https://ui-avatars.com/api/?name=${authUser.displayName || 'User'}&background=EFF6FF&color=3B82F6`} alt="Profile" style={{ width: 28, height: 28, borderRadius: '50%' }} />
               <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
@@ -242,6 +242,8 @@ function Header({ view, setView, onRefresh, refreshing, authUser, onSignOut }) {
                 <button onClick={onSignOut} style={{ all: 'unset', fontSize: 10, color: 'var(--owe)', cursor: 'pointer', fontWeight: 600 }}>Sign Out</button>
               </div>
             </div>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>Not signed in</div>
           )}
         </div>
 
