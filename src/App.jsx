@@ -970,7 +970,7 @@ function SharedBillView({ shareUserId, shareBillId }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeQR, setActiveQR] = useState(null);
-  const [processing, setProcessing] = useState(false);
+  const [processingPersonId, setProcessingPersonId] = useState(null);
 
   useEffect(() => {
     async function fetchShared() {
@@ -996,7 +996,10 @@ function SharedBillView({ shareUserId, shareBillId }) {
   const payer = roster.find(r => r.id === bill.payerId);
 
   async function markSelfPaid(personId, amount) {
-    setProcessing(true);
+    const alreadyPending = (bill.payments || []).some(pm => pm.personId === personId && pm.status === 'pending');
+    if (processingPersonId || alreadyPending) return;
+
+    setProcessingPersonId(personId);
     try {
       const docRef = doc(db, "users", shareUserId);
       const docSnap = await getDoc(docRef);
@@ -1023,7 +1026,7 @@ function SharedBillView({ shareUserId, shareBillId }) {
         setData({ ...currentData, bills: updatedBills });
       }
     } catch (e) { alert("Failed to log payment."); }
-    setProcessing(false);
+    finally { setProcessingPersonId(null); }
   }
 
   return (
@@ -1122,8 +1125,8 @@ function SharedBillView({ shareUserId, shareBillId }) {
                         <button onClick={() => setActiveQR({ payer, amount: p.remaining })} style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', background: '#EFF6FF', color: '#3B82F6', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                           <QrCode size={14} /> Pay QR
                         </button>
-                        <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processing} style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', background: '#111827', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                          {processing ? <Loader2 size={14} style={{ animation: 'ki-spin 0.8s linear infinite' }} /> : <Check size={14} />} Mark Paid
+                        <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processingPersonId === pid || hasPending} style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', background: '#111827', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', opacity: processingPersonId === pid || hasPending ? 0.7 : 1 }}>
+                          {processingPersonId === pid ? <Loader2 size={14} style={{ animation: 'ki-spin 0.8s linear infinite' }} /> : <Check size={14} />} {hasPending ? 'Pending Verification' : processingPersonId === pid ? 'Submitting…' : 'Mark Paid'}
                         </button>
                       </div>
                     )}
