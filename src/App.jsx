@@ -2,7 +2,6 @@ import { auth, db, googleProvider } from './firebase';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import Tesseract from 'tesseract.js';
 import {
   Users, Receipt, Plus, Trash2, Wallet, Copy, Check,
   ChevronDown, ChevronUp, X, Pencil, ArrowRight, Loader2, RefreshCw,
