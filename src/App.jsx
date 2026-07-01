@@ -225,39 +225,41 @@ const TABS = [
 
 function Header({ view, setView, onRefresh, refreshing, authUser, onSignOut }) {
   return (
-    <div style={{ marginBottom: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: 28, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-            Kautim<span style={{ color: 'var(--stamp)' }}>.</span>
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 6 }}>
-            split the bill, settle the tab, skip the awkward maths
-          </div>
-        </div>
+    <div style={{ marginBottom: 24, textAlign: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
 
-        {/* Profile & Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={onRefresh} title="Pull latest from the group" aria-label="Refresh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+        {/* Profile & Refresh - Moved to a top row to keep header clean */}
+        <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <button onClick={onRefresh} title="Refresh" style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer' }}>
             <RefreshCw size={16} style={{ animation: refreshing ? 'ki-spin 0.8s linear infinite' : 'none' }} />
           </button>
 
           {authUser && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '4px 12px 4px 4px', borderRadius: '20px', border: '1px solid var(--line)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '4px 12px 4px 4px', borderRadius: '20px', border: '1px solid var(--line)' }}>
               <img src={authUser.photoURL || `https://ui-avatars.com/api/?name=${authUser.displayName || 'User'}&background=EFF6FF&color=3B82F6`} alt="Profile" style={{ width: 28, height: 28, borderRadius: '50%' }} />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.displayName}</span>
-                <button onClick={onSignOut} style={{ all: 'unset', fontSize: 10, color: 'var(--owe)', cursor: 'pointer', fontWeight: 600, lineHeight: 1.2, marginTop: 2 }}>Sign Out</button>
+              <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)' }}>{authUser.displayName}</span>
+                <button onClick={onSignOut} style={{ all: 'unset', fontSize: 10, color: 'var(--owe)', cursor: 'pointer', fontWeight: 600 }}>Sign Out</button>
               </div>
             </div>
           )}
         </div>
+
+        {/* Title Section - Now Centered */}
+        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: 32, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+          Kautim<span style={{ color: 'var(--stamp)' }}>.</span>
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 8 }}>
+          split the bill, settle the tab, skip the awkward maths
+        </div>
       </div>
-      <nav style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+
+      {/* Tabs - Centered */}
+      <nav style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
         {TABS.map(t => {
           const active = view === t.id;
           return (
-            <button key={t.id} onClick={() => setView(t.id)} className="ki-tab" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: active ? '#111827' : '#fff', border: active ? '1px solid #111827' : '1px solid var(--line)', borderRadius: '10px', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: active ? '0 4px 6px -1px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)' }}>
+            <button key={t.id} onClick={() => setView(t.id)} className="ki-tab" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: active ? '#111827' : '#fff', border: active ? '1px solid #111827' : '1px solid var(--line)', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: active ? '0 4px 6px -1px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)' }}>
               <t.icon size={16} style={{ color: active ? '#fff' : 'var(--ink-soft)' }} />
               <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 14, color: active ? '#fff' : 'var(--ink)' }}>{t.label}</span>
             </button>
