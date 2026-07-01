@@ -471,7 +471,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
 
       const imageBase64 = await fileToBase64(file);
 
-      const scanRes = await fetch('https://us-central1-kautim-6b186.cloudfunctions.net/scanReceipt ', {
+      const scanRes = await fetch('https://us-central1-kautim-6b186.cloudfunctions.net/scanReceipt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64 })
@@ -588,13 +588,16 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
       </div>
 
       <div className="ki-card receipt-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div className="ki-card-title" style={{ marginBottom: 0 }}>Items</div>
-          <GhostButton icon={Camera} onClick={() => fileInputRef.current?.click()} disabled={isScanning}>
-            {isScanning ? 'Scanning...' : 'Scan Receipt'}
+        <div style={{ display: 'flex', gap: 6 }}>
+          <GhostButton icon={Camera} onClick={() => cameraInputRef.current?.click()} disabled={isScanning}>
+            {isScanning ? 'Scanning...' : 'Take Photo'}
           </GhostButton>
-          <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" capture="environment" ref={fileInputRef} onChange={handleScanReceipt} style={{ display: 'none' }} />
+          <GhostButton icon={Receipt} onClick={() => fileInputRef.current?.click()} disabled={isScanning}>
+            Upload
+          </GhostButton>
         </div>
+        <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" capture="environment" ref={cameraInputRef} onChange={handleScanReceipt} style={{ display: 'none' }} />
+        <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" ref={fileInputRef} onChange={handleScanReceipt} style={{ display: 'none' }} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {draft.items.map((it, idx) => {
