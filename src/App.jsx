@@ -162,10 +162,12 @@ function StampBadge({ kind, children }) {
 
 function EmptyState({ icon: Icon, title, body, action }) {
   return (
-    <div style={{ textAlign: 'center', padding: '48px 20px', border: '1.5px dashed var(--line)', borderRadius: 14, background: 'var(--paper-dim)' }}>
-      <Icon size={28} strokeWidth={1.5} style={{ color: 'var(--ink-soft)', marginBottom: 10 }} />
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: 16, color: 'var(--ink)' }}>{title}</div>
-      <div style={{ color: 'var(--ink-soft)', fontSize: 13.5, marginTop: 4, maxWidth: 340, marginInline: 'auto', lineHeight: 1.5 }}>{body}</div>
+    <div style={{ textAlign: 'center', padding: '48px 24px', border: '1px dashed #D1D5DB', borderRadius: '16px', background: '#F9FAFB' }}>
+      <div style={{ background: '#EFF6FF', width: 48, height: 48, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+        <Icon size={24} strokeWidth={2} style={{ color: 'var(--stamp)' }} />
+      </div>
+      <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{title}</div>
+      <div style={{ color: 'var(--ink-soft)', fontSize: 14, marginTop: 6, maxWidth: 320, marginInline: 'auto', lineHeight: 1.5 }}>{body}</div>
       {action && <div style={{ marginTop: 16 }}>{action}</div>}
     </div>
   );
@@ -218,34 +220,32 @@ function IconButton({ icon: Icon, label, danger, ...rest }) {
 const TABS = [
   { id: 'ledger', label: 'Ledger', code: 'LG-01', icon: Wallet },
   { id: 'newbill', label: 'New Bill', code: 'BL-02', icon: Receipt },
-  { id: 'people', label: 'People', code: 'PP-03', icon: Users },
-  { id: 'message', label: 'Message', code: 'MS-04', icon: MessageSquare },
+  { id: 'people', label: 'People', code: 'PP-03', icon: Users }
 ];
 
 function Header({ view, setView, onRefresh, refreshing }) {
   return (
-    <div style={{ marginBottom: 22 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18 }}>
+    <div style={{ marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 27, color: 'var(--ink)', letterSpacing: '-0.01em', lineHeight: 1 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: 28, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
             Kautim<span style={{ color: 'var(--stamp)' }}>.</span>
           </div>
-          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 5, fontFamily: "'IBM Plex Mono', monospace" }}>
+          <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 6 }}>
             split the bill, settle the tab, skip the awkward maths
           </div>
         </div>
-        <button onClick={onRefresh} title="Pull latest from the group" aria-label="Refresh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: 9, border: '1.5px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer', flexShrink: 0 }}>
-          <RefreshCw size={15} style={{ animation: refreshing ? 'ki-spin 0.8s linear infinite' : 'none' }} />
+        <button onClick={onRefresh} title="Pull latest from the group" aria-label="Refresh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+          <RefreshCw size={16} style={{ animation: refreshing ? 'ki-spin 0.8s linear infinite' : 'none' }} />
         </button>
       </div>
-      <nav style={{ display: 'flex', gap: 4, borderBottom: '1.5px solid var(--line)', overflowX: 'auto' }}>
+      <nav style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
         {TABS.map(t => {
           const active = view === t.id;
           return (
-            <button key={t.id} onClick={() => setView(t.id)} className="ki-tab" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 13px 11px', background: 'transparent', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', borderBottom: active ? '2.5px solid var(--stamp)' : '2.5px solid transparent', marginBottom: -1.5 }}>
-              <t.icon size={15} style={{ color: active ? 'var(--ink)' : 'var(--ink-soft)' }} />
-              <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 13.5, color: active ? 'var(--ink)' : 'var(--ink-soft)' }}>{t.label}</span>
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, color: 'var(--ink-soft)', opacity: 0.6 }}>{t.code}</span>
+            <button key={t.id} onClick={() => setView(t.id)} className="ki-tab" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: active ? '#111827' : '#fff', border: active ? '1px solid #111827' : '1px solid var(--line)', borderRadius: '10px', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: active ? '0 4px 6px -1px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <t.icon size={16} style={{ color: active ? '#fff' : 'var(--ink-soft)' }} />
+              <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 14, color: active ? '#fff' : 'var(--ink)' }}>{t.label}</span>
             </button>
           );
         })}
@@ -258,10 +258,8 @@ function Header({ view, setView, onRefresh, refreshing }) {
 
 function PeopleView({ data, mutate, myId, setMyId }) {
   const [name, setName] = useState('');
-  const [discordId, setDiscordId] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
-  const [editDiscord, setEditDiscord] = useState('');
   const [editQrCode, setEditQrCode] = useState('');
   const [error, setError] = useState('');
 
@@ -281,9 +279,8 @@ function PeopleView({ data, mutate, myId, setMyId }) {
       setError(`${trimmed} is already on the roster.`);
       return;
     }
-    const next = { ...data, roster: [...data.roster, { id: uid(), name: trimmed, discordId: discordId.trim(), qrCode: '' }] };
-    mutate(next);
-    setName(''); setDiscordId(''); setError('');
+    mutate({ ...data, roster: [...data.roster, { id: uid(), name: trimmed, qrCode: '' }] });
+    setName(''); setError('');
   }
 
   function removePerson(id) {
@@ -293,18 +290,14 @@ function PeopleView({ data, mutate, myId, setMyId }) {
   }
 
   function startEdit(p) {
-    setEditingId(p.id);
-    setEditName(p.name);
-    setEditDiscord(p.discordId || '');
-    setEditQrCode(p.qrCode || '');
+    setEditingId(p.id); setEditName(p.name); setEditQrCode(p.qrCode || '');
   }
 
   function saveEdit() {
     const trimmed = editName.trim();
     if (!trimmed) return;
     mutate({
-      ...data,
-      roster: data.roster.map(r => r.id === editingId ? { ...r, name: trimmed, discordId: editDiscord.trim(), qrCode: editQrCode } : r),
+      ...data, roster: data.roster.map(r => r.id === editingId ? { ...r, name: trimmed, qrCode: editQrCode } : r),
     });
     setEditingId(null);
   }
@@ -318,27 +311,26 @@ function PeopleView({ data, mutate, myId, setMyId }) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div className="ki-card">
         <div className="ki-card-title">Add someone</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 9, alignItems: 'end' }}>
-          <Field label="Name">
-            <TextInput value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPerson()} placeholder="e.g. Darnish" />
-          </Field>
-          <Field label="Discord ID (optional)" hint="Lets the message actually @ping them">
-            <TextInput value={discordId} onChange={e => setDiscordId(e.target.value.replace(/[^0-9]/g, ''))} onKeyDown={e => e.key === 'Enter' && addPerson()} placeholder="17–19 digit user ID" />
-          </Field>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'end' }}>
+          <div style={{ flex: 1 }}>
+            <Field label="Name">
+              <TextInput value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addPerson()} placeholder="e.g. Darnish" />
+            </Field>
+          </div>
           <PrimaryButton onClick={addPerson} icon={UserPlus} disabled={!name.trim()}>Add</PrimaryButton>
         </div>
-        {error && <div style={{ color: 'var(--owe)', fontSize: 12.5, marginTop: 8 }}>{error}</div>}
+        {error && <div style={{ color: 'var(--owe)', fontSize: 13, marginTop: 10, fontWeight: 500 }}>{error}</div>}
       </div>
 
       <div className="ki-card">
         <div className="ki-card-title">Who's checking this?</div>
-        <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginBottom: 10, lineHeight: 1.5 }}>
-          Pick your name so the app knows who you are. This is saved just for you, not shared.
+        <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginBottom: 12, lineHeight: 1.5 }}>
+          Pick your name so the app knows who you are. This is saved just for you.
         </div>
-        <select value={myId || ''} onChange={e => setMyId(e.target.value || null)} style={{ ...inputStyle, maxWidth: 280 }}>
+        <select value={myId || ''} onChange={e => setMyId(e.target.value || null)} style={{ ...inputStyle, maxWidth: 300 }}>
           <option value="">— Select your name —</option>
           {data.roster.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
@@ -347,45 +339,37 @@ function PeopleView({ data, mutate, myId, setMyId }) {
       <div>
         <div className="ki-section-title">Roster ({data.roster.length})</div>
         {data.roster.length === 0 ? (
-          <EmptyState icon={Users} title="Nobody added yet" body="Add everyone in the group above. Once they're on the roster, you can put them on bills and tag them in messages." />
+          <EmptyState icon={Users} title="Nobody added yet" body="Add everyone in the group above. Once they're on the roster, you can put them on bills." />
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {data.roster.map(p => (
-              <div key={p.id} className="ki-card" style={{ padding: '11px 14px' }}>
+              <div key={p.id} className="ki-card" style={{ padding: '16px' }}>
                 {editingId === p.id ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
-                      <TextInput value={editName} onChange={e => setEditName(e.target.value)} autoFocus />
-                      <TextInput value={editDiscord} onChange={e => setEditDiscord(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Discord ID" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <TextInput value={editName} onChange={e => setEditName(e.target.value)} autoFocus style={{ flex: 1 }} />
                       <GhostButton onClick={saveEdit}>Save</GhostButton>
                       <IconButton icon={X} label="Cancel" onClick={() => setEditingId(null)} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '12px', color: 'var(--ink-soft)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'var(--ink-soft)', background: '#F9FAFB', padding: '12px', borderRadius: '8px' }}>
                       <strong>Payment QR:</strong>
                       <input type="file" accept="image/*" onChange={handleQrUpload} style={{ fontSize: '12px' }} />
                       {editQrCode && <span style={{ color: 'var(--settled)', fontWeight: 'bold' }}>✓ Uploaded</span>}
                     </div>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 999, background: 'var(--paper-dim)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12.5, color: 'var(--ink-soft)', flexShrink: 0 }}>{p.name.slice(0, 1).toUpperCase()}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--paper-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink-soft)' }}>{p.name.slice(0, 1).toUpperCase()}</div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8 }}>
                           {p.name}
-                          {myId === p.id && <span style={{ fontSize: 10.5, color: 'var(--stamp)', fontWeight: 700 }}>YOU</span>}
-                          {p.qrCode && <QrCode size={12} color="var(--stamp)" title="Has QR Code" />}
+                          {myId === p.id && <span style={{ fontSize: 11, color: 'var(--stamp)', background: '#EFF6FF', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>YOU</span>}
+                          {p.qrCode && <QrCode size={14} color="var(--stamp)" title="Has QR Code" />}
                         </div>
-                        {p.discordId ? (
-                          <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace", display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <AtSign size={10} /> {p.discordId}
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: 11.5, color: 'var(--ink-soft)', opacity: 0.6 }}>no Discord ID saved</div>
-                        )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                       <IconButton icon={Pencil} label="Edit" onClick={() => startEdit(p)} />
                       <IconButton icon={Trash2} label="Remove" danger onClick={() => removePerson(p.id)} disabled={referencedIds.has(p.id)} style={referencedIds.has(p.id) ? { opacity: 0.3, cursor: 'not-allowed' } : {}} />
                     </div>
@@ -817,10 +801,9 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <GhostButton icon={Copy} onClick={copyShareLink}>Copy Share Link</GhostButton>
-            <GhostButton icon={MessageSquare} onClick={() => onMessageThis(bill.id)}>Draft a message</GhostButton>
-            <GhostButton icon={Trash2} onClick={() => onDelete(bill.id)} style={{ color: 'var(--owe)', borderColor: 'var(--owe-bg)' }}>Delete</GhostButton>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <GhostButton icon={Copy} onClick={copyShareLink} style={{ flex: 1, justifyContent: 'center' }}>Copy Share Link</GhostButton>
+            <GhostButton icon={Trash2} onClick={() => onDelete(bill.id)} style={{ flex: 1, justifyContent: 'center', color: 'var(--owe)', background: 'var(--owe-bg)', border: 'none' }}>Delete Bill</GhostButton>
           </div>
         </div>
       )}
@@ -1097,7 +1080,6 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [myId, setMyIdState] = useState(null);
   const [view, setView] = useState('ledger');
-  const [messagePresetBill, setMessagePresetBill] = useState(null);
 
   const handleLogin = async () => {
     try {
@@ -1147,7 +1129,6 @@ export default function App() {
     localStorage.setItem('kautim-identity', JSON.stringify({ personId: id }));
   }, []);
 
-  function goToMessage(billId) { setMessagePresetBill(billId); setView('message'); }
   function goToLedger() { setView('ledger'); }
 
   // Clean, Modern Login Screen
@@ -1205,45 +1186,36 @@ export default function App() {
   return (
     <div style={{ background: 'var(--paper)', width: '100%', minHeight: '100vh', padding: '20px 16px 60px' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         
         :root {
           --paper: #F9FAFB; --paper-dim: #F3F4F6; --ink: #111827; --ink-soft: #6B7280;
           --owe: #EF4444; --owe-bg: #FEE2E2; --settled: #10B981; --settled-bg: #D1FAE5;
-          --stamp: #3B82F6; --line: #E5E7EB; --discord-bg: #313338;
+          --stamp: #3B82F6; --line: #E5E7EB;
         }
         
-        /* Forces the background to cover the entire screen and overrides Vite's default flexbox */
         html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: var(--paper); display: block !important; }
-        
-        /* Overrides the retro fonts across the entire app for a modern SaaS look */
         * { box-sizing: border-box; font-family: 'Inter', sans-serif !important; }
         
-        .ki-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .ki-card-title { font-weight: 600; font-size: 16px; color: var(--ink); margin-bottom: 16px; }
-        .ki-section-title { font-weight: 600; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+        .ki-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); }
+        .ki-card-title { font-weight: 700; font-size: 17px; color: var(--ink); margin-bottom: 18px; }
+        .ki-section-title { font-weight: 700; font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
         
-        .ki-input:focus, select:focus, textarea:focus { border-color: var(--stamp) !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .ki-input:focus, select:focus, textarea:focus { border-color: var(--stamp) !important; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
         button:focus-visible { outline: 2px solid var(--stamp); outline-offset: 2px; }
         
-        /* Hides the ugly native scrollbar on the navigation tabs */
         nav::-webkit-scrollbar { display: none; }
         nav { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .ki-tab:hover span { color: var(--ink) !important; }
-        .ki-add-item:hover { border-color: var(--ink) !important; color: var(--ink) !important; }
-        .ki-chip:hover { border-color: var(--ink) !important; }
-        
-        .dot-leader { flex: 1; border-bottom: 1px dashed var(--line); margin-bottom: 4px; min-width: 16px; }
-        .receipt-divider { border-top: 1px solid var(--line); margin: 16px 0; }
+        .dot-leader { flex: 1; border-bottom: 1px dashed #D1D5DB; margin-bottom: 4px; min-width: 16px; }
+        .receipt-divider { border-top: 1px solid var(--line); margin: 20px 0; }
         .receipt-line + .receipt-line { border-top: 1px solid var(--line); margin-top: 16px; }
         
         .stamp-badge { transform: rotate(0deg); border: 1px solid !important; border-radius: 6px !important; }
-        ::placeholder { color: var(--ink-soft); opacity: 0.5; }
-        select, textarea, .ki-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        ::placeholder { color: #9CA3AF; }
+        select, textarea, .ki-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 14.5px; transition: all 0.2s; }
         
         @keyframes ki-spin { to { transform: rotate(360deg); } }
-        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
       `}</style>
 
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
@@ -1258,7 +1230,6 @@ export default function App() {
             {view === 'ledger' && <LedgerView data={data} mutate={mutate} roster={data.roster} goToMessage={goToMessage} />}
             {view === 'newbill' && <NewBillView data={data} mutate={mutate} myId={myId} goToLedger={goToLedger} />}
             {view === 'people' && <PeopleView data={data} mutate={mutate} myId={myId} setMyId={setMyId} />}
-            {view === 'message' && <MessageView data={data} roster={data.roster} presetBillId={messagePresetBill} />}
           </>
         )}
       </div>
