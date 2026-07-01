@@ -1101,6 +1101,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [myId, setMyIdState] = useState(null);
   const [view, setView] = useState('ledger');
+  function goToLedger() { setView('ledger'); }
 
   // Firebase listener to persist login across refreshes
   useEffect(() => {
