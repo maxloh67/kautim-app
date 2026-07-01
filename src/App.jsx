@@ -400,6 +400,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
   const [draft, setDraft] = useState(emptyDraft);
   const [justSaved, setJustSaved] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState('');
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -454,38 +455,59 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
   }
 
   const handleScanReceipt = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
+
     setIsScanning(true);
+    setScanMessage('');
+
     try {
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
-      const lines = text.split('\n');
+      const lines = (text || '')
+        .replace(/\r/g, '')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean);
+
       const scannedItems = [];
+      const ignoredKeywords = ['total', 'subtotal', 'tax', 'service', 'cash', 'change', 'payment', 'thank', 'visa', 'mastercard', 'card', 'gst', 'sst', 'receipt', 'balance'];
 
       lines.forEach(line => {
-        const match = line.match(/(.+?)\s+([\d]+\.\d{2})$/);
-        if (match && !line.toLowerCase().includes('total') && !line.toLowerCase().includes('tax') && !line.toLowerCase().includes('cash')) {
-          scannedItems.push({
-            id: uid(),
-            name: match[1].trim().replace(/[^a-zA-Z0-9 ]/g, ''),
-            unitPrice: match[2],
-            quantity: 1,
-            assignments: []
-          });
-        }
+        const normalized = line.toLowerCase();
+        if (ignoredKeywords.some(keyword => normalized.includes(keyword))) return;
+        if (line.length < 3) return;
+
+        const match = line.match(/(.+?)\s+([0-9]+(?:[.,][0-9]{1,2}))\s*(?:rm|myr)?$/i);
+        if (!match) return;
+
+        const rawName = match[1].trim().replace(/^(rm|myr)\s*/i, '').trim();
+        const rawPrice = match[2].replace(/,/g, '.');
+        const price = Number(rawPrice);
+
+        if (!rawName || !Number.isFinite(price) || price <= 0) return;
+
+        scannedItems.push({
+          id: uid(),
+          name: rawName.replace(/[^a-zA-Z0-9 &/-]/g, '').trim(),
+          unitPrice: String(price.toFixed(2)),
+          quantity: 1,
+          assignments: []
+        });
       });
 
       if (scannedItems.length > 0) {
         setDraft(d => ({ ...d, items: [...d.items, ...scannedItems] }));
+        setScanMessage(`Added ${scannedItems.length} item${scannedItems.length > 1 ? 's' : ''} from the receipt.`);
       } else {
-        alert("Could not automatically detect items/prices from this receipt. Try taking a clearer picture.");
+        setScanMessage('We could not detect clear item lines from that receipt. Try a brighter, straight-on photo or enter items manually.');
       }
     } catch (err) {
-      console.error("OCR Error:", err);
-      alert("Failed to scan receipt. Please enter items manually.");
+      console.error('OCR Error:', err);
+      setScanMessage('The receipt scan failed. Please try another photo or enter items manually.');
+    } finally {
+      setIsScanning(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-    setIsScanning(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const summary = useMemo(() => computeBill({
@@ -560,7 +582,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
           <GhostButton icon={Camera} onClick={() => fileInputRef.current?.click()} disabled={isScanning}>
             {isScanning ? 'Scanning...' : 'Scan Receipt'}
           </GhostButton>
-          <input type="file" accept="image/*" ref={fileInputRef} onChange={handleScanReceipt} style={{ display: 'none' }} />
+          <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp" capture="environment" ref={fileInputRef} onChange={handleScanReceipt} style={{ display: 'none' }} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -617,6 +639,12 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
             );
           })}
         </div>
+
+        {scanMessage && (
+          <div style={{ marginTop: 12, fontSize: 12.5, color: 'var(--ink-soft)', background: 'var(--paper-dim)', padding: '8px 10px', borderRadius: 8, lineHeight: 1.5 }}>
+            {scanMessage}
+          </div>
+        )}
 
         <button onClick={addItem} className="ki-add-item" style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 6, padding: '9px 13px', borderRadius: 9, border: '1.5px dashed var(--line)', background: 'transparent', color: 'var(--ink-soft)', fontWeight: 600, fontSize: 13.5, cursor: 'pointer', width: '100%', justifyContent: 'center' }}>
           <Plus size={15} /> Add item
