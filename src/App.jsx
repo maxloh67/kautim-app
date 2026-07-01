@@ -772,15 +772,17 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
               const isDeficit = p.remaining < -0.004;
 
               return (
-                <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 11px', borderRadius: 9, background: 'var(--paper-dim)', fontSize: 13 }}>
+                <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: 9, background: 'var(--paper-dim)', fontSize: 13 }}>
                   <div>
                     <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
                       {personName(roster, pid)} {pid === bill.payerId && <span style={{ fontSize: 10, color: 'var(--stamp)', fontWeight: 700 }}>PAYER</span>}
                     </div>
                     {pid !== bill.payerId && (
-                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace" }}>
-                        food {fmt(p.subtotal)} + tax {fmt(p.tax)} + service {fmt(p.service)}
-                        {p.paid > 0 && ` · paid ${fmt(p.paid)}`}
+                      <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace", marginTop: 4 }}>
+                        <div>food {fmt(p.subtotal)} + tax {fmt(p.tax)} + svc {fmt(p.service)}</div>
+                        <div style={{ marginTop: 4, fontWeight: 600, color: 'var(--ink)' }}>
+                          Total: {fmt(p.totalOwed)} · Paid: {fmt(p.paid)}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -792,7 +794,7 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
                       {isDeficit && (
                         <button
                           onClick={() => onAddPayment(bill.id, { id: uid(), personId: pid, amount: round2(p.remaining), method: 'Refund', note: 'Deficit returned manually', date: todayISO() })}
-                          style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, background: 'var(--stamp)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                          style={{ padding: '6px 10px', fontSize: 11, borderRadius: 6, background: 'var(--stamp)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                           Refund
                         </button>
                       )}
@@ -1001,17 +1003,17 @@ function SharedBillView({ shareUserId, shareBillId }) {
               const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
               const isDeficit = p.remaining < -0.004;
 
-              // Find all items this specific person was assigned to
               const userItems = bill.items.filter(it => it.assignments.some(a => a.personId === pid && a.amount > 0));
 
               return (
                 <div key={pid} style={{ display: 'flex', flexDirection: 'column', padding: '12px', borderRadius: '8px', background: '#F3F4F6' }}>
 
-                  {/* Top Header: Name and Status */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                       <div style={{ fontWeight: 600, color: '#111827' }}>{person?.name}</div>
-                      <div style={{ fontSize: 12, color: '#6B7280' }}>Grand Total: {fmt(p.totalOwed)}</div>
+                      <div style={{ fontSize: 12, color: '#4B5563', marginTop: 2 }}>
+                        Total: <strong>{fmt(p.totalOwed)}</strong> • Paid: <strong>{fmt(p.paid)}</strong>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                       <div style={{ fontWeight: 700, color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444' }}>
@@ -1028,7 +1030,6 @@ function SharedBillView({ shareUserId, shareBillId }) {
                     </div>
                   </div>
 
-                  {/* Bottom Section: Item Breakdown */}
                   <div style={{ marginTop: 12, padding: '10px', background: '#fff', borderRadius: '6px', fontSize: '13px', border: '1px solid #E5E7EB' }}>
                     <div style={{ fontWeight: 600, color: '#4B5563', marginBottom: 6, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items Breakdown</div>
 
