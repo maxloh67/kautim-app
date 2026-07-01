@@ -1,5 +1,5 @@
 import { auth, db, googleProvider } from './firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Tesseract from 'tesseract.js';
@@ -223,7 +223,7 @@ const TABS = [
   { id: 'people', label: 'People', code: 'PP-03', icon: Users }
 ];
 
-function Header({ view, setView, onRefresh, refreshing }) {
+function Header({ view, setView, onRefresh, refreshing, authUser, onSignOut }) {
   return (
     <div style={{ marginBottom: 24 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
@@ -235,9 +235,23 @@ function Header({ view, setView, onRefresh, refreshing }) {
             split the bill, settle the tab, skip the awkward maths
           </div>
         </div>
-        <button onClick={onRefresh} title="Pull latest from the group" aria-label="Refresh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-          <RefreshCw size={16} style={{ animation: refreshing ? 'ki-spin 0.8s linear infinite' : 'none' }} />
-        </button>
+
+        {/* Profile & Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onRefresh} title="Pull latest from the group" aria-label="Refresh" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--ink-soft)', cursor: 'pointer', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+            <RefreshCw size={16} style={{ animation: refreshing ? 'ki-spin 0.8s linear infinite' : 'none' }} />
+          </button>
+
+          {authUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '4px 12px 4px 4px', borderRadius: '20px', border: '1px solid var(--line)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <img src={authUser.photoURL || `https://ui-avatars.com/api/?name=${authUser.displayName || 'User'}&background=EFF6FF&color=3B82F6`} alt="Profile" style={{ width: 28, height: 28, borderRadius: '50%' }} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{authUser.displayName}</span>
+                <button onClick={onSignOut} style={{ all: 'unset', fontSize: 10, color: 'var(--owe)', cursor: 'pointer', fontWeight: 600, lineHeight: 1.2, marginTop: 2 }}>Sign Out</button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       <nav style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
         {TABS.map(t => {
@@ -1067,26 +1081,46 @@ function SharedBillView({ shareUserId, shareBillId }) {
 }
 
 export default function App() {
+  
   const urlParams = new URLSearchParams(window.location.search);
-  const shareUserId = urlParams.get('share');
-  const shareBillId = urlParams.get('bill');
+    const shareUserId = urlParams.get('share');
+    const shareBillId = urlParams.get('bill');
 
-  if (shareUserId && shareBillId) {
+    if (shareUserId && shareBillId) {
     return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
   }
-  const [authUser, setAuthUser] = useState(null);
-  const [data, setData] = useState(emptyData());
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [myId, setMyIdState] = useState(null);
-  const [view, setView] = useState('ledger');
+
+    const [authUser, setAuthUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true); // Checks session before rendering
+    const [data, setData] = useState(emptyData());
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [myId, setMyIdState] = useState(null);
+    const [view, setView] = useState('ledger');
+
+  // Firebase listener to persist login across refreshes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setAuthUser(user);
+    setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleLogin = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      setAuthUser(result.user);
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Login failed", error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    setData(emptyData()); // Clear local data on sign out
+    } catch (error) {
+      console.error("Sign out failed", error);
     }
   };
 
@@ -1101,89 +1135,91 @@ export default function App() {
   useEffect(() => {
     if (!authUser) {
       setLoading(false);
-      return;
+    return;
     }
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const d = await loadData(authUser.uid);
-      const localId = localStorage.getItem('kautim-identity');
-      if (!cancelled) {
-        setData(d);
-        setMyIdState(localId ? JSON.parse(localId).personId : null);
-        setLoading(false);
+    const d = await loadData(authUser.uid);
+    const localId = localStorage.getItem('kautim-identity');
+    if (!cancelled) {
+      setData(d);
+    setMyIdState(localId ? JSON.parse(localId).personId : null);
+    setLoading(false); 
       }
     })();
     const onFocus = () => refresh();
     window.addEventListener('focus', onFocus);
-    return () => { cancelled = true; window.removeEventListener('focus', onFocus); };
+    return () => {cancelled = true; window.removeEventListener('focus', onFocus); };
   }, [authUser, refresh]);
 
   const mutate = useCallback((next) => {
-    setData(next);
+      setData(next);
     if (authUser) persistData(authUser.uid, next);
   }, [authUser]);
 
   const setMyId = useCallback((id) => {
-    setMyIdState(id);
-    localStorage.setItem('kautim-identity', JSON.stringify({ personId: id }));
+      setMyIdState(id);
+    localStorage.setItem('kautim-identity', JSON.stringify({personId: id }));
   }, []);
 
-  function goToLedger() { setView('ledger'); }
-
-  // Clean, Modern Login Screen
-  if (!authUser) {
+    // Show a loading spinner while Firebase checks if you are logged in
+    if (authLoading) {
+    return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}><Loader2 size={24} style={{ animation: 'ki-spin 0.8s linear infinite', color: '#3B82F6' }} /></div>;
+  }
+    // Clean, Modern Login Screen
+    if (!authUser) {
     return (
-      <div style={{ display: 'flex', width: '100%', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%)', margin: 0, padding: 20 }}>
-        <style>{`
+    <div style={{ display: 'flex', width: '100%', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%)', margin: 0, padding: 20 }}>
+      <style>{`
           /* Forces the background to cover the entire screen and overrides Vite's default flexbox */
           html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; font-family: 'Inter', sans-serif; display: block !important; }
           * { box-sizing: border-box; }
         `}</style>
 
-        <div style={{ background: '#fff', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '24px', padding: '48px 40px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', maxWidth: '400px', width: '100%', position: 'relative', overflow: 'hidden', margin: '0 auto' }}>
+      <div style={{ background: '#fff', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '24px', padding: '48px 40px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', maxWidth: '400px', width: '100%', position: 'relative', overflow: 'hidden', margin: '0 auto' }}>
 
-          {/* Decorative background blur */}
-          <div style={{ position: 'absolute', top: -50, left: -50, width: 150, height: 150, background: '#EFF6FF', borderRadius: '50%', zIndex: 0, filter: 'blur(40px)' }}></div>
+        {/* Decorative background blur */}
+        <div style={{ position: 'absolute', top: -50, left: -50, width: 150, height: 150, background: '#EFF6FF', borderRadius: '50%', zIndex: 0, filter: 'blur(40px)' }}></div>
 
-          <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'relative', zIndex: 1 }}>
 
-            {/* App Icon */}
-            <div style={{ background: '#F3F4F6', width: 64, height: 64, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '1px solid #E5E7EB' }}>
-              <Wallet size={32} color="#3B82F6" strokeWidth={1.5} />
-            </div>
-
-            <h2 style={{ margin: '0 0 8px 0', color: '#111827', fontSize: '32px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              Kautim<span style={{ color: '#3B82F6' }}>.</span>
-            </h2>
-
-            <p style={{ margin: '0 0 32px 0', color: '#6B7280', fontSize: '14px', lineHeight: 1.5 }}>
-              Split the bill, settle the tab, and skip the awkward group chat maths.
-            </p>
-
-            <button
-              onClick={handleLogin}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', width: '100%', padding: '14px 24px', borderRadius: '12px', cursor: 'pointer', background: '#111827', color: '#fff', border: 'none', fontWeight: '600', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)' }}
-              onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-              onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              {/* Google G Logo SVG */}
-              <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              </svg>
-              Continue with Google
-            </button>
+          {/* App Icon */}
+          <div style={{ background: '#F3F4F6', width: 64, height: 64, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '1px solid #E5E7EB' }}>
+            <Wallet size={32} color="#3B82F6" strokeWidth={1.5} />
           </div>
+
+          <h2 style={{ margin: '0 0 8px 0', color: '#111827', fontSize: '32px', fontWeight: 800, letterSpacing: '-0.02em' }}>
+            Kautim<span style={{ color: '#3B82F6' }}>.</span>
+          </h2>
+
+          <p style={{ margin: '0 0 32px 0', color: '#6B7280', fontSize: '14px', lineHeight: 1.5 }}>
+            Split the bill, settle the tab, and skip the awkward group chat maths.
+          </p>
+
+          <button
+            onClick={handleLogin}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', width: '100%', padding: '14px 24px', borderRadius: '12px', cursor: 'pointer', background: '#111827', color: '#fff', border: 'none', fontWeight: '600', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)' }}
+            onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+          >
+            {/* Google G Logo SVG */}
+            <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+            </svg>
+            Continue with Google
+          </button>
         </div>
       </div>
+    </div>
     );
   }
 
-  // Clean, Modern Main App
-  return (
+    // Clean, Modern Main App
+    return (
     <div style={{ background: 'var(--paper)', width: '100%', minHeight: '100vh', padding: '20px 16px 60px' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -1234,5 +1270,5 @@ export default function App() {
         )}
       </div>
     </div>
-  );
+    );
 }
