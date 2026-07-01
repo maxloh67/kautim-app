@@ -948,12 +948,12 @@ function SharedBillView({ shareUserId, shareBillId }) {
     fetchShared();
   }, [shareUserId]);
 
-  if (loading) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>Loading bill...</div>;
-  if (!data) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>Bill not found.</div>;
+  if (loading) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}><Loader2 size={24} style={{ animation: 'ki-spin 0.8s linear infinite', color: '#3B82F6' }} /></div>;
+  if (!data) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', color: '#6B7280' }}>Bill not found.</div>;
 
   const bill = (data.bills || []).find(b => b.id === shareBillId);
   const roster = data.roster || [];
-  if (!bill) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>Bill has been deleted.</div>;
+  if (!bill) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', color: '#6B7280' }}>Bill has been deleted.</div>;
 
   const summary = computeBill(bill);
   const payer = roster.find(r => r.id === bill.payerId);
@@ -979,80 +979,97 @@ function SharedBillView({ shareUserId, shareBillId }) {
   }
 
   return (
-    <div style={{ background: 'var(--paper)', minHeight: '100vh', padding: '20px 16px', display: 'block', width: '100%' }}>
+    <div style={{ background: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%)', minHeight: '100vh', padding: '40px 16px', display: 'block', width: '100%' }}>
       <style>{`
-        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: #F9FAFB; font-family: 'Inter', sans-serif; display: block !important; }
+        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; font-family: 'Inter', sans-serif; display: block !important; }
         * { box-sizing: border-box; }
-        .ki-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 16px; }
+        @keyframes ki-spin { to { transform: rotate(360deg); } }
       `}</style>
-
+      
       {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
 
-      <div style={{ maxWidth: 500, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h2 style={{ margin: '0 0 8px 0', color: '#111827', fontSize: '24px', fontWeight: 700 }}>{bill.title}</h2>
-          <div style={{ fontSize: 14, color: '#6B7280' }}>Paid by <strong>{payer?.name}</strong> • {niceDate(bill.date)}</div>
+      <div style={{ maxWidth: '480px', margin: '0 auto', background: '#fff', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)' }}>
+        
+        {/* Header Section */}
+        <div style={{ background: '#111827', padding: '32px 24px', textAlign: 'center', color: '#fff', position: 'relative' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '4px', background: 'linear-gradient(90deg, #3B82F6, #10B981, #F59E0B)' }}></div>
+          <div style={{ background: 'rgba(255,255,255,0.1)', display: 'inline-flex', padding: '6px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px' }}>
+            Dinner Receipt
+          </div>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 700, letterSpacing: '-0.02em' }}>{bill.title}</h2>
+          <div style={{ fontSize: '14px', color: '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <Receipt size={14} /> {niceDate(bill.date)}
+          </div>
         </div>
 
-        <div className="ki-card">
-          <div style={{ fontWeight: 600, marginBottom: 16, color: '#111827' }}>Who owes what:</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px dashed #E5E7EB' }}>
+            <div style={{ fontSize: '13px', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Paid By</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#EFF6FF', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
+                {payer?.name.charAt(0).toUpperCase()}
+              </div>
+              <strong style={{ color: '#111827', fontSize: '15px' }}>{payer?.name}</strong>
+            </div>
+          </div>
+
+          <div style={{ fontWeight: 600, marginBottom: '16px', color: '#111827', fontSize: '15px' }}>Breakdown</div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {Object.entries(summary.perPerson).map(([pid, p]) => {
               if (pid === bill.payerId) return null;
               const person = roster.find(r => r.id === pid);
               const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
               const isDeficit = p.remaining < -0.004;
-
+              
               const userItems = bill.items.filter(it => it.assignments.some(a => a.personId === pid && a.amount > 0));
-
+              
               return (
-                <div key={pid} style={{ display: 'flex', flexDirection: 'column', padding: '12px', borderRadius: '8px', background: '#F3F4F6' }}>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div key={pid} style={{ border: '1px solid #E5E7EB', borderRadius: '12px', overflow: 'hidden' }}>
+                  {/* Top Bar */}
+                  <div style={{ background: '#F9FAFB', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #E5E7EB' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: '#111827' }}>{person?.name}</div>
-                      <div style={{ fontSize: 12, color: '#4B5563', marginTop: 2 }}>
+                      <div style={{ fontWeight: 600, color: '#111827', fontSize: '15px' }}>{person?.name}</div>
+                      <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
                         Total: <strong>{fmt(p.totalOwed)}</strong> • Paid: <strong>{fmt(p.paid)}</strong>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                      <div style={{ fontWeight: 700, color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444' }}>
-                        {isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : `Owes: ${fmt(p.remaining)}`}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                      <div style={{ fontWeight: 700, fontSize: '13px', color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444', background: isDeficit ? '#EFF6FF' : isSettled ? '#D1FAE5' : '#FEE2E2', padding: '6px 10px', borderRadius: '6px' }}>
+                        {isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid ✓' : `Owes: ${fmt(p.remaining)}`}
                       </div>
-                      {!isSettled && !isDeficit && (
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => setActiveQR({ payer, amount: p.remaining })} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB', cursor: 'pointer' }}>QR</button>
-                          <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processing} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#111827', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                            Mark Paid
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
-
-                  <div style={{ marginTop: 12, padding: '10px', background: '#fff', borderRadius: '6px', fontSize: '13px', border: '1px solid #E5E7EB' }}>
-                    <div style={{ fontWeight: 600, color: '#4B5563', marginBottom: 6, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items Breakdown</div>
-
-                    {userItems.map(it => {
-                      const assignment = it.assignments.find(a => a.personId === pid);
-                      return (
-                        <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#4B5563', marginBottom: 4 }}>
-                          <span>{it.name}</span>
-                          <span>{fmt(assignment.amount)}</span>
-                        </div>
-                      );
-                    })}
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9CA3AF', borderTop: '1px dashed #E5E7EB', marginTop: 8, paddingTop: 8, fontSize: '12px' }}>
-                      <span>Subtotal</span>
-                      <span>{fmt(p.subtotal)}</span>
+                  
+                  {/* Items & Actions Bar */}
+                  <div style={{ padding: '16px', background: '#fff' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                      {userItems.map(it => {
+                        const assignment = it.assignments.find(a => a.personId === pid);
+                        return (
+                          <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#4B5563', fontSize: '13px' }}>
+                            <span>{it.name}</span>
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(assignment.amount)}</span>
+                          </div>
+                        );
+                      })}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9CA3AF', borderTop: '1px dashed #E5E7EB', marginTop: '8px', paddingTop: '12px', fontSize: '13px' }}>
+                        <span>Tax & Service</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(p.tax + p.service)}</span>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9CA3AF', fontSize: '12px', marginTop: 4 }}>
-                      <span>Tax & Service</span>
-                      <span>{fmt(p.tax + p.service)}</span>
-                    </div>
+
+                    {!isSettled && !isDeficit && (
+                      <div style={{ display: 'flex', gap: '8px', paddingTop: '16px', borderTop: '1px solid #F3F4F6' }}>
+                        <button onClick={() => setActiveQR({ payer, amount: p.remaining })} style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', background: '#EFF6FF', color: '#3B82F6', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <QrCode size={14} /> Pay QR
+                        </button>
+                        <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processing} style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '8px', background: '#111827', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          {processing ? <Loader2 size={14} style={{ animation: 'ki-spin 0.8s linear infinite' }} /> : <Check size={14} />} Mark Paid
+                        </button>
+                      </div>
+                    )}
                   </div>
-
                 </div>
               );
             })}
