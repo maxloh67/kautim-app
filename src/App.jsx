@@ -1129,7 +1129,7 @@ export default function App() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const shareUserId = urlParams.get('share');
-  const shareBillId = urlParams.get('bill');;
+  const shareBillId = urlParams.get('bill');
 
   if (shareUserId && shareBillId) {
     return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
