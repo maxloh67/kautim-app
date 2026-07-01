@@ -855,6 +855,9 @@ function LedgerView({ data, mutate, roster }) {
   function addPayment(billId, payment) {
     mutate({ ...data, bills: data.bills.map(b => b.id === billId ? { ...b, payments: [...(b.payments || []), payment] } : b) });
   }
+  function updateBill(updatedBill) {
+    mutate({ ...data, bills: data.bills.map(b => b.id === updatedBill.id ? updatedBill : b) });
+  }
 
   function deleteBill(billId) {
     mutate({ ...data, bills: data.bills.filter(b => b.id !== billId) });
