@@ -770,7 +770,7 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
             {Object.entries(summary.perPerson).map(([pid, p]) => {
               const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
               const isDeficit = p.remaining < -0.004;
-              
+
               return (
                 <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 11px', borderRadius: 9, background: 'var(--paper-dim)', fontSize: 13 }}>
                   <div>
@@ -785,9 +785,18 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onMessageThis }) {
                     )}
                   </div>
                   {pid !== bill.payerId && (
-                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: isDeficit ? 'var(--stamp)' : isSettled ? 'var(--settled)' : 'var(--owe)' }}>
-                      {isDeficit ? `DEFICIT ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : fmt(p.remaining)}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, color: isDeficit ? 'var(--stamp)' : isSettled ? 'var(--settled)' : 'var(--owe)' }}>
+                        {isDeficit ? `DEFICIT ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : fmt(p.remaining)}
+                      </span>
+                      {isDeficit && (
+                        <button
+                          onClick={() => onAddPayment(bill.id, { id: uid(), personId: pid, amount: round2(p.remaining), method: 'Refund', note: 'Deficit returned manually', date: todayISO() })}
+                          style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, background: 'var(--stamp)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                          Refund
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )
@@ -956,12 +965,12 @@ function SharedBillView({ shareUserId, shareBillId }) {
         const currentData = docSnap.data();
         const updatedBills = currentData.bills.map(b => {
           if (b.id === shareBillId) {
-            return { ...b, payments: [...(b.payments || []), { id: uid(), personId, amount, method: 'Shared Link (Self-Marked)', date: todayISO() }] };
+            return { ...b, payments: [...(b.payments || []), { id: uid(), personId, amount, method: 'Shared Link', note: 'Self-Marked', date: todayISO() }] };
           }
           return b;
         });
         await setDoc(docRef, { ...currentData, bills: updatedBills });
-        setData({ ...currentData, bills: updatedBills }); // Update local UI
+        setData({ ...currentData, bills: updatedBills });
       }
     } catch (e) { alert("Failed to log payment."); }
     setProcessing(false);
@@ -974,7 +983,7 @@ function SharedBillView({ shareUserId, shareBillId }) {
         * { box-sizing: border-box; }
         .ki-card { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 16px; }
       `}</style>
-      
+
       {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
 
       <div style={{ maxWidth: 500, margin: '0 auto' }}>
@@ -991,26 +1000,58 @@ function SharedBillView({ shareUserId, shareBillId }) {
               const person = roster.find(r => r.id === pid);
               const isSettled = p.remaining <= 0.004 && p.remaining >= -0.004;
               const isDeficit = p.remaining < -0.004;
-              
+
+              // Find all items this specific person was assigned to
+              const userItems = bill.items.filter(it => it.assignments.some(a => a.personId === pid && a.amount > 0));
+
               return (
-                <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderRadius: '8px', background: '#F3F4F6' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, color: '#111827' }}>{person?.name}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280' }}>Total: {fmt(p.totalOwed)}</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                    <div style={{ fontWeight: 700, color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444' }}>
-                      {isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : `Owes: ${fmt(p.remaining)}`}
+                <div key={pid} style={{ display: 'flex', flexDirection: 'column', padding: '12px', borderRadius: '8px', background: '#F3F4F6' }}>
+
+                  {/* Top Header: Name and Status */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#111827' }}>{person?.name}</div>
+                      <div style={{ fontSize: 12, color: '#6B7280' }}>Grand Total: {fmt(p.totalOwed)}</div>
                     </div>
-                    {!isSettled && !isDeficit && (
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => setActiveQR({ payer, amount: p.remaining })} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB', cursor: 'pointer' }}>View QR</button>
-                        <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processing} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#111827', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                          Mark Paid
-                        </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                      <div style={{ fontWeight: 700, color: isDeficit ? '#3B82F6' : isSettled ? '#10B981' : '#EF4444' }}>
+                        {isDeficit ? `DEFICIT: ${fmt(Math.abs(p.remaining))}` : isSettled ? 'Paid' : `Owes: ${fmt(p.remaining)}`}
                       </div>
-                    )}
+                      {!isSettled && !isDeficit && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button onClick={() => setActiveQR({ payer, amount: p.remaining })} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB', cursor: 'pointer' }}>QR</button>
+                          <button onClick={() => markSelfPaid(pid, p.remaining)} disabled={processing} style={{ padding: '6px 10px', fontSize: 12, borderRadius: 6, background: '#111827', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                            Mark Paid
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Bottom Section: Item Breakdown */}
+                  <div style={{ marginTop: 12, padding: '10px', background: '#fff', borderRadius: '6px', fontSize: '13px', border: '1px solid #E5E7EB' }}>
+                    <div style={{ fontWeight: 600, color: '#4B5563', marginBottom: 6, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items Breakdown</div>
+
+                    {userItems.map(it => {
+                      const assignment = it.assignments.find(a => a.personId === pid);
+                      return (
+                        <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', color: '#4B5563', marginBottom: 4 }}>
+                          <span>{it.name}</span>
+                          <span>{fmt(assignment.amount)}</span>
+                        </div>
+                      );
+                    })}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9CA3AF', borderTop: '1px dashed #E5E7EB', marginTop: 8, paddingTop: 8, fontSize: '12px' }}>
+                      <span>Subtotal</span>
+                      <span>{fmt(p.subtotal)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#9CA3AF', fontSize: '12px', marginTop: 4 }}>
+                      <span>Tax & Service</span>
+                      <span>{fmt(p.tax + p.service)}</span>
+                    </div>
+                  </div>
+
                 </div>
               );
             })}
