@@ -471,7 +471,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
 
       const imageBase64 = await fileToBase64(file);
 
-      const scanRes = await fetch('https://us-central1-YOUR-PROJECT.cloudfunctions.net/scanReceipt', {
+      const scanRes = await fetch('https://us-central1-kautim-6b186.cloudfunctions.net/scanReceipt ', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64 })
