@@ -643,14 +643,14 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {Object.entries(summary.perPerson).map(([pid, p]) => (
               <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 13.5 }}>
-                <span style={{ fontWeight: 600, color: 'var(--ink)' }}>
-                  {personName(data.roster, pid)}{pid === draft.payerId && <span style={{ color: 'var(--stamp)', fontSize: 10.5, marginLeft: 6, fontWeight: 700 }}>PAYER</span>}
+                <span style={{ fontWeight: 600, color: 'var(--ink)', fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {personName(data.roster, pid)}{pid === draft.payerId && <span style={{ color: 'var(--stamp)', background: 'var(--stamp-bg)', fontSize: 10, marginLeft: 6, fontWeight: 700, padding: '2px 7px', borderRadius: '5px', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.04em' }}>PAYER</span>}
                 </span>
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600, color: 'var(--ink)' }}>{fmt(p.totalOwed)}</span>
               </div>
             ))}
             <div className="receipt-divider" />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14.5, fontWeight: 700 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif" }}>
               <span>Bill total</span>
               <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(summary.grandTotal)}</span>
             </div>
@@ -755,7 +755,7 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
     <div className="ki-card receipt-card">
       <button onClick={() => setOpen(o => !o)} style={{ all: 'unset', display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer', boxSizing: 'border-box' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontFamily: "'Space Grotesk', sans-serif" }}>
             {bill.title}
             <StampBadge kind={settled ? 'settled' : 'owing'}>{settled ? 'Settled' : 'Outstanding'}</StampBadge>
           </div>
@@ -771,10 +771,10 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
           <div className="receipt-divider" style={{ marginBottom: 12 }} />
 
           {bill.payments?.filter(pm => pm.status === 'pending').map(pm => (
-            <div key={pm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FEF3C7', borderRadius: 8, marginBottom: 8, gap: 10 }}>
+            <div key={pm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--pending-bg)', border: '1.5px dashed var(--pending)', borderRadius: 8, marginBottom: 8, gap: 10 }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 12.5, marginBottom: 6 }}>
-                  {personName(roster, pm.personId)} marked a payment as paid
+                <div style={{ fontSize: 12.5, marginBottom: 6, color: 'var(--ink)' }}>
+                  <strong style={{ color: 'var(--pending)' }}>{personName(roster, pm.personId)}</strong> marked a payment as paid
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 11, color: 'var(--ink-soft)' }}>Confirm amount RM</span>
@@ -827,7 +827,7 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
                 <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: 9, background: 'var(--paper-dim)', fontSize: 13 }}>
                   <div>
                     <div style={{ fontWeight: 600, color: 'var(--ink)' }}>
-                      {personName(roster, pid)} {pid === bill.payerId && <span style={{ fontSize: 10, color: 'var(--stamp)', fontWeight: 700 }}>PAYER</span>}
+                      {personName(roster, pid)} {pid === bill.payerId && <span style={{ fontSize: 10, color: 'var(--stamp)', background: 'var(--stamp-bg)', padding: '2px 7px', borderRadius: '5px', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.04em', marginLeft: 4 }}>PAYER</span>}
                     </div>
                     {pid !== bill.payerId && (
                       <div style={{ fontSize: 11, color: 'var(--ink-soft)', fontFamily: "'IBM Plex Mono', monospace", marginTop: 4 }}>
@@ -859,7 +859,7 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
 
           {!settled && (
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 7 }}>
+              <div className="ki-section-title" style={{ marginBottom: 7 }}>
                 Log a payment
               </div>
               <PaymentForm roster={roster} bill={bill} onAdd={(p) => onAddPayment(bill.id, p)} />
@@ -880,7 +880,7 @@ function QRCodeModal({ payer, amount, onClose }) {
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={onClose}>
       <div className="ki-card" style={{ padding: 24, textAlign: 'center', width: 280 }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Pay {payer.name}</div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, fontFamily: "'Space Grotesk', sans-serif", color: 'var(--ink)' }}>Pay {payer.name}</div>
         <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 24, color: 'var(--stamp)', fontWeight: 700, marginBottom: 16 }}>{fmt(amount)}</div>
 
         <div style={{ background: '#fff', padding: 12, border: '1px solid var(--line)', borderRadius: 12, display: 'inline-block', marginBottom: 16 }}>
@@ -1274,11 +1274,12 @@ export default function App() {
       <style>{`
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
   
-  :root {
-    --paper: #FAFAF8; --paper-dim: #F1F0EC; --ink: #1A1A1A; --ink-soft: #6B6B63;
-    --owe: #C0392B; --owe-bg: #FBEAE7; --settled: #1E7A4C; --settled-bg: #E3F3EA;
-    --stamp: #2451B5; --stamp-bg: #EAF0FB; --line: #E4E2DB;
-  }
+:root {
+  --paper: #FAFAF8; --paper-dim: #F1F0EC; --ink: #1A1A1A; --ink-soft: #6B6B63;
+  --owe: #C0392B; --owe-bg: #FBEAE7; --settled: #1E7A4C; --settled-bg: #E3F3EA;
+  --stamp: #2451B5; --stamp-bg: #EAF0FB; --pending: #A8720B; --pending-bg: #FBF1DD;
+  --line: #E4E2DB;
+}
   
   html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; background-color: var(--paper); display: block !important; }
   * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
