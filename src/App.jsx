@@ -797,7 +797,18 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
                     step="0.01"
                     value={getEditedAmount(pm)}
                     onChange={e => setPendingEdits(edits => ({ ...edits, [pm.id]: e.target.value }))}
-                    style={{ width: 78, padding: '4px 7px', borderRadius: 6, border: '1.5px solid var(--line)', fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, textAlign: 'right', background: '#fff' }}
+                    style={{
+                      width: 78,
+                      padding: '4px 7px',
+                      borderRadius: 6,
+                      border: '1.5px solid var(--line)',
+                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontSize: 12.5,
+                      textAlign: 'right',
+                      background: '#fff',
+                      color: 'var(--ink)',        // ← add this
+                      colorScheme: 'light'        // ← add this, stops browser dark-mode from re-tinting it
+                    }}
                   />
                 </div>
               </div>
