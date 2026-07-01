@@ -232,7 +232,7 @@ function Header({ view, setView, onRefresh, refreshing, authUser, onSignOut }) {
         </div>
 
         {/* Title Section - Now Centered */}
-        <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 800, fontSize: 32, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 32, color: 'var(--ink)', letterSpacing: '-0.02em', lineHeight: 1 }}>
           Kautim<span style={{ color: 'var(--stamp)' }}>.</span>
         </div>
         <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 8 }}>
@@ -245,9 +245,10 @@ function Header({ view, setView, onRefresh, refreshing, authUser, onSignOut }) {
         {TABS.map(t => {
           const active = view === t.id;
           return (
-            <button key={t.id} onClick={() => setView(t.id)} className="ki-tab" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: active ? '#111827' : '#fff', border: active ? '1px solid #111827' : '1px solid var(--line)', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: active ? '0 4px 6px -1px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)' }}>
+            <button key={t.id} onClick={() => setView(t.id)} className="ki-tab" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: active ? 'var(--ink)' : '#fff', border: active ? '1px solid var(--ink)' : '1px solid var(--line)', borderRadius: '10px', cursor: 'pointer', transition: 'all 0.2s', boxShadow: active ? '0 4px 6px -1px rgba(0,0,0,0.1)' : '0 1px 2px rgba(0,0,0,0.05)' }}>
               <t.icon size={16} style={{ color: active ? '#fff' : 'var(--ink-soft)' }} />
-              <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600, fontSize: 14, color: active ? '#fff' : 'var(--ink)' }}>{t.label}</span>
+              <span style={{ fontWeight: 600, fontSize: 14, color: active ? '#fff' : 'var(--ink)' }}>{t.label}</span>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: '0.03em', color: active ? 'rgba(255,255,255,0.5)' : 'var(--line)' }}>{t.code}</span>
             </button>
           );
         })}
@@ -1028,10 +1029,17 @@ function SharedBillView({ shareUserId, shareBillId }) {
   return (
     <div style={{ background: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%)', minHeight: '100vh', padding: '40px 16px', display: 'block', width: '100%' }}>
       <style>{`
-        html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; font-family: 'Inter', sans-serif; display: block !important; }
-        * { box-sizing: border-box; }
-        @keyframes ki-spin { to { transform: rotate(360deg); } }
-      `}</style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+  :root {
+    --paper: #FAFAF8; --paper-dim: #F1F0EC; --ink: #1A1A1A; --ink-soft: #6B6B63;
+    --owe: #C0392B; --owe-bg: #FBEAE7; --settled: #1E7A4C; --settled-bg: #E3F3EA;
+    --stamp: #2451B5; --stamp-bg: #EAF0FB; --pending: #A8720B; --pending-bg: #FBF1DD;
+    --line: #E4E2DB;
+  }
+  html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; font-family: 'Inter', sans-serif; display: block !important; }
+  * { box-sizing: border-box; }
+  @keyframes ki-spin { to { transform: rotate(360deg); } }
+`}</style>
 
       {activeQR && <QRCodeModal payer={activeQR.payer} amount={activeQR.amount} onClose={() => setActiveQR(null)} />}
 
@@ -1222,34 +1230,39 @@ export default function App() {
     return (
       <div style={{ display: 'flex', width: '100%', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 100%)', margin: 0, padding: 20 }}>
         <style>{`
-          /* Forces the background to cover the entire screen and overrides Vite's default flexbox */
-          html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; font-family: 'Inter', sans-serif; display: block !important; }
-          * { box-sizing: border-box; }
-        `}</style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+  :root {
+    --paper: #FAFAF8; --paper-dim: #F1F0EC; --ink: #1A1A1A; --ink-soft: #6B6B63;
+    --stamp: #2451B5; --stamp-bg: #EAF0FB; --line: #E4E2DB;
+  }
+  /* Forces the background to cover the entire screen and overrides Vite's default flexbox */
+  html, body, #root { margin: 0; padding: 0; width: 100%; min-height: 100vh; font-family: 'Inter', sans-serif; display: block !important; }
+  * { box-sizing: border-box; }
+`}</style>
 
-        <div style={{ background: '#fff', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '24px', padding: '48px 40px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', maxWidth: '400px', width: '100%', position: 'relative', overflow: 'hidden', margin: '0 auto' }}>
+        <div style={{ background: '#fff', border: '1px solid var(--line)', borderRadius: '24px', padding: '48px 40px', textAlign: 'center', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)', maxWidth: '400px', width: '100%', position: 'relative', overflow: 'hidden', margin: '0 auto' }}>
 
           {/* Decorative background blur */}
-          <div style={{ position: 'absolute', top: -50, left: -50, width: 150, height: 150, background: '#EFF6FF', borderRadius: '50%', zIndex: 0, filter: 'blur(40px)' }}></div>
+          <div style={{ position: 'absolute', top: -50, left: -50, width: 150, height: 150, background: 'var(--stamp-bg)', borderRadius: '50%', zIndex: 0, filter: 'blur(40px)' }}></div>
 
           <div style={{ position: 'relative', zIndex: 1 }}>
 
             {/* App Icon */}
-            <div style={{ background: '#F3F4F6', width: 64, height: 64, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '1px solid #E5E7EB' }}>
-              <Wallet size={32} color="#3B82F6" strokeWidth={1.5} />
+            <div style={{ background: 'var(--paper-dim)', width: 64, height: 64, borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto', border: '1px solid var(--line)' }}>
+              <Wallet size={32} color="var(--stamp)" strokeWidth={1.5} />
             </div>
 
-            <h2 style={{ margin: '0 0 8px 0', color: '#111827', fontSize: '32px', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              Kautim<span style={{ color: '#3B82F6' }}>.</span>
+            <h2 style={{ margin: '0 0 8px 0', color: 'var(--ink)', fontSize: '32px', fontWeight: 700, letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>
+              Kautim<span style={{ color: 'var(--stamp)' }}>.</span>
             </h2>
 
-            <p style={{ margin: '0 0 32px 0', color: '#6B7280', fontSize: '14px', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 32px 0', color: 'var(--ink-soft)', fontSize: '14px', lineHeight: 1.5 }}>
               Split the bill, settle the tab, and skip the awkward group chat maths.
             </p>
 
             <button
               onClick={handleLogin}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', width: '100%', padding: '14px 24px', borderRadius: '12px', cursor: 'pointer', background: '#111827', color: '#fff', border: 'none', fontWeight: '600', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', width: '100%', padding: '14px 24px', borderRadius: '12px', cursor: 'pointer', background: 'var(--ink)', color: '#fff', border: 'none', fontWeight: '600', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)' }}
               onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
               onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
             >
