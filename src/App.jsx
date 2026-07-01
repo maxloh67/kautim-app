@@ -146,11 +146,11 @@ function StampBadge({ kind, children }) {
 
 function EmptyState({ icon: Icon, title, body, action }) {
   return (
-    <div style={{ textAlign: 'center', padding: '48px 24px', border: '1px dashed #D1D5DB', borderRadius: '16px', background: '#F9FAFB' }}>
-      <div style={{ background: '#EFF6FF', width: 48, height: 48, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
+    <div style={{ textAlign: 'center', padding: '48px 24px', border: '1.5px dashed var(--line)', borderRadius: '16px', background: 'var(--paper-dim)' }}>
+      <div style={{ background: 'var(--stamp-bg)', width: 48, height: 48, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' }}>
         <Icon size={24} strokeWidth={2} style={{ color: 'var(--stamp)' }} />
       </div>
-      <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>{title}</div>
+      <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)', fontFamily: "'Space Grotesk', sans-serif" }}>{title}</div>
       <div style={{ color: 'var(--ink-soft)', fontSize: 14, marginTop: 6, maxWidth: 320, marginInline: 'auto', lineHeight: 1.5 }}>{body}</div>
       {action && <div style={{ marginTop: 16 }}>{action}</div>}
     </div>
@@ -353,7 +353,7 @@ function PeopleView({ data, mutate, myId, setMyId }) {
                       <GhostButton onClick={saveEdit}>Save</GhostButton>
                       <IconButton icon={X} label="Cancel" onClick={() => setEditingId(null)} />
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'var(--ink-soft)', background: '#F9FAFB', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '13px', color: 'var(--ink-soft)', background: 'var(--paper-dim)', padding: '12px', borderRadius: '8px' }}>
                       <strong>Payment QR:</strong>
                       <input type="file" accept="image/*" onChange={handleQrUpload} style={{ fontSize: '12px' }} />
                       {editQrCode && <span style={{ color: 'var(--settled)', fontWeight: 'bold' }}>✓ Uploaded</span>}
@@ -362,11 +362,11 @@ function PeopleView({ data, mutate, myId, setMyId }) {
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'var(--paper-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--ink-soft)' }}>{p.name.slice(0, 1).toUpperCase()}</div>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--stamp-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--stamp)', fontFamily: "'Space Grotesk', sans-serif" }}>{p.name.slice(0, 1).toUpperCase()}</div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: 8, fontFamily: "'Space Grotesk', sans-serif" }}>
                           {p.name}
-                          {myId === p.id && <span style={{ fontSize: 11, color: 'var(--stamp)', background: '#EFF6FF', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>YOU</span>}
+                          {myId === p.id && <span style={{ fontSize: 10, color: 'var(--stamp)', background: 'var(--stamp-bg)', padding: '2px 7px', borderRadius: '5px', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '0.04em' }}>YOU</span>}
                           {p.qrCode && <QrCode size={14} color="var(--stamp)" title="Has QR Code" />}
                         </div>
                       </div>
@@ -569,7 +569,10 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
             const diff = round2(lineTotal - allocated);
             return (
               <div key={it.id} className="receipt-line" style={{ paddingTop: idx === 0 ? 0 : 14 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 64px 30px', gap: 8, alignItems: 'end', marginBottom: 9 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '22px 1fr 90px 64px 30px', gap: 8, alignItems: 'end', marginBottom: 9 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: 'var(--ink-soft)', paddingBottom: 9, textAlign: 'right' }}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </div>
                   <Field label="Item">
                     <TextInput value={it.name} onChange={e => updateItem(it.id, { name: e.target.value })} placeholder="e.g. Chicken Katsu Don" />
                   </Field>
@@ -586,7 +589,7 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
                   {data.roster.map(p => {
                     const on = it.assignments.some(a => a.personId === p.id);
                     return (
-                      <button key={p.id} onClick={() => toggleParticipant(it.id, p.id)} className="ki-chip" style={{ padding: '5px 11px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', border: on ? '1.5px solid var(--ink)' : '1.5px solid var(--line)', background: on ? 'var(--ink)' : '#fff', color: on ? 'var(--paper)' : 'var(--ink-soft)' }}>
+                      <button key={p.id} onClick={() => toggleParticipant(it.id, p.id)} className="ki-chip" style={{ padding: '5px 11px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', border: on ? '1.5px solid var(--stamp)' : '1.5px solid var(--line)', background: on ? 'var(--stamp)' : '#fff', color: on ? '#fff' : 'var(--ink-soft)' }}>
                         {p.name}
                       </button>
                     );
@@ -925,11 +928,13 @@ function LedgerView({ data, mutate, roster }) {
               const payerObj = roster.find(r => r.id === p.payerId);
               const payerName = payerObj ? payerObj.name : 'Unknown';
               return (
-                <div key={`${p.debtorId}__${p.payerId}`} className="ki-card" style={{ padding: '13px 15px' }}>
-                  <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
-                    <strong style={{ color: 'var(--ink)' }}>{personName(roster, p.debtorId)}</strong> owes <strong style={{ color: 'var(--ink)' }}>{payerName}</strong>
+                <div key={`${p.debtorId}__${p.payerId}`} className="ki-card" style={{ padding: '13px 15px', borderLeft: '3px solid var(--owe)' }}>
+                  <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <strong style={{ color: 'var(--ink)', fontFamily: "'Space Grotesk', sans-serif" }}>{personName(roster, p.debtorId)}</strong>
+                    <ArrowRight size={12} style={{ color: 'var(--ink-soft)', flexShrink: 0 }} />
+                    <strong style={{ color: 'var(--ink)', fontFamily: "'Space Grotesk', sans-serif" }}>{payerName}</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 5 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 6 }}>
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 700, fontSize: 19, color: 'var(--owe)' }}>
                       {fmt(p.amount)}
                     </div>
