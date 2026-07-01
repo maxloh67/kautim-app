@@ -4,9 +4,9 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import {
-  Users, Receipt, Plus, Trash2, Wallet, MessageSquare, Copy, Check,
+  Users, Receipt, Plus, Trash2, Wallet, Copy, Check,
   ChevronDown, ChevronUp, X, Pencil, ArrowRight, Loader2, RefreshCw,
-  UserPlus, AtSign, CircleDollarSign, ClipboardCheck, Camera, QrCode, Send
+  UserPlus, ClipboardCheck, Camera, QrCode
 } from 'lucide-react';
 
 /* ----------------------------- helpers ----------------------------- */
@@ -49,20 +49,6 @@ async function persistData(userId, data) {
   try {
     await setDoc(doc(db, "users", userId), data);
   } catch (e) { console.error(e); }
-}
-
-async function loadIdentity() {
-  if (typeof window === 'undefined' || !window.storage) return null;
-  try {
-    const res = await window.storage.get(IDENTITY_KEY, false);
-    if (res && res.value) return JSON.parse(res.value).personId || null;
-  } catch (e) { }
-  return null;
-}
-async function persistIdentity(personId) {
-  if (typeof window === 'undefined' || !window.storage) return;
-  try { await window.storage.set(IDENTITY_KEY, JSON.stringify({ personId }), false); }
-  catch (e) { console.error('Kautim: identity save failed', e); }
 }
 
 function personName(roster, id) {
@@ -972,27 +958,6 @@ function LedgerView({ data, mutate, roster }) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function ScopePicker({ scopeType, setScopeType, billsWithBalance, billId, setBillId, payerOptions, payerId, setPayerId, roster }) {
-  return (
-    <div className="ki-card">
-      <div className="ki-card-title">Who's this message for</div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-        <button onClick={() => setScopeType('bill')} disabled={billsWithBalance.length === 0} style={{ padding: '7px 13px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: billsWithBalance.length === 0 ? 'not-allowed' : 'pointer', border: scopeType === 'bill' ? '1.5px solid var(--ink)' : '1.5px solid var(--line)', background: scopeType === 'bill' ? 'var(--ink)' : '#fff', color: scopeType === 'bill' ? 'var(--paper)' : 'var(--ink-soft)', opacity: billsWithBalance.length === 0 ? 0.4 : 1 }}>One bill</button>
-        <button onClick={() => setScopeType('payer')} disabled={payerOptions.length === 0} style={{ padding: '7px 13px', borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: payerOptions.length === 0 ? 'not-allowed' : 'pointer', border: scopeType === 'payer' ? '1.5px solid var(--ink)' : '1.5px solid var(--line)', background: scopeType === 'payer' ? 'var(--ink)' : '#fff', color: scopeType === 'payer' ? 'var(--paper)' : 'var(--ink-soft)', opacity: payerOptions.length === 0 ? 0.4 : 1 }}>Everything owed to someone</button>
-      </div>
-      {scopeType === 'bill' ? (
-        <select value={billId} onChange={e => setBillId(e.target.value)} style={inputStyle}>
-          {billsWithBalance.map(b => <option key={b.id} value={b.id}>{b.title} — {niceDate(b.date)}</option>)}
-        </select>
-      ) : (
-        <select value={payerId} onChange={e => setPayerId(e.target.value)} style={inputStyle}>
-          {payerOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-      )}
     </div>
   );
 }
