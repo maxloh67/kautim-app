@@ -69,6 +69,7 @@ function personName(roster, id) {
   const p = roster.find(r => r.id === id);
   return p ? p.name : 'Unknown';
 }
+const isPaymentCounted = (pm) => pm.status !== 'pending';
 
 function computeBill(bill) {
   const perPerson = {};
@@ -107,8 +108,8 @@ function computeBill(bill) {
     const p = perPerson[pid];
 
     // Separate approved payments from pending verifications
-    const approvedPayments = (bill.payments || []).filter(pm => pm.personId === pid && pm.status !== 'pending');
-    const pendingPayments = (bill.payments || []).filter(pm => pm.personId === pid && pm.status === 'pending');
+    const approvedPayments = (bill.payments || []).filter(pm => pm.personId === pid && isPaymentCounted(pm));
+    const pendingPayments = (bill.payments || []).filter(pm => pm.personId === pid && !isPaymentCounted(pm));
 
     p.paid = round2(approvedPayments.reduce((s, pm) => s + (pm.amount || 0), 0));
     p.remaining = round2(p.totalOwed - p.paid);
@@ -761,6 +762,32 @@ function BillRow({ bill, roster, onAddPayment, onDelete, onUpdateBill }) {
       {open && (
         <div style={{ marginTop: 16 }}>
           <div className="receipt-divider" style={{ marginBottom: 12 }} />
+
+          {bill.payments?.filter(pm => pm.status === 'pending').map(pm => (
+            <div key={pm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#FEF3C7', borderRadius: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 12.5 }}>
+                {personName(roster, pm.personId)} marked {fmt(pm.amount)} as paid
+              </span>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => onUpdateBill({
+                    ...bill,
+                    payments: bill.payments.map(p => p.id === pm.id ? { ...p, status: 'approved' } : p)
+                  })}
+                  style={{ fontSize: 11, padding: '5px 9px', borderRadius: 6, background: 'var(--settled)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                  Approve
+                </button>
+                <button
+                  onClick={() => onUpdateBill({
+                    ...bill,
+                    payments: bill.payments.filter(p => p.id !== pm.id)
+                  })}
+                  style={{ fontSize: 11, padding: '5px 9px', borderRadius: 6, background: 'var(--owe)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginBottom: 14 }}>
             {bill.items.map(it => (
               <div key={it.id} className="leader-row" style={{ display: 'flex', alignItems: 'baseline', gap: 8, fontSize: 12.5 }}>
@@ -964,13 +991,6 @@ function SharedBillView({ shareUserId, shareBillId }) {
   if (!bill) return <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB', color: '#6B7280' }}>Bill has been deleted.</div>;
 
   const summary = computeBill(bill);
-  Object.keys(summary.perPerson).forEach(pid => {
-    const p = summary.perPerson[pid];
-    // Only count payments where status is 'approved'
-    const approved = (bill.payments || []).filter(pm => pm.personId === pid && pm.status === 'approved');
-    p.paid = round2(approved.reduce((s, pm) => s + (pm.amount || 0), 0));
-    p.remaining = round2(p.totalOwed - p.paid);
-  });
   const payer = roster.find(r => r.id === bill.payerId);
 
   async function markSelfPaid(personId, amount) {
@@ -1110,6 +1130,8 @@ export default function App() {
   const urlParams = new URLSearchParams(window.location.search);
   const shareUserId = urlParams.get('share');
   const shareBillId = urlParams.get('bill');
+  const [authUser, setAuthUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   if (shareUserId && shareBillId) {
     return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
@@ -1281,7 +1303,8 @@ export default function App() {
       `}</style>
 
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        <Header view={view} setView={setView} onRefresh={refresh} refreshing={refreshing} />
+        <Header view={view} setView={setView} onRefresh={refresh} refreshing={refreshing} authUser={authUser} onSignOut={handleSignOut} />
+
 
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, color: 'var(--ink-soft)', fontSize: 14, padding: '40px 0', justifyContent: 'center' }}>
