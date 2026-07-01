@@ -462,13 +462,24 @@ function NewBillView({ data, mutate, myId, goToLedger }) {
     setScanMessage('');
 
     try {
-      const { data: { text } } = await Tesseract.recognize(file, 'eng');
-      const lines = (text || '')
-        .replace(/\r/g, '')
-        .split('\n')
-        .map(line => line.trim())
-        .filter(Boolean);
+      const fileToBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
 
+      const imageBase64 = await fileToBase64(file);
+
+      const scanRes = await fetch('https://us-central1-YOUR-PROJECT.cloudfunctions.net/scanReceipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 })
+      });
+
+      if (!scanRes.ok) throw new Error('Scan failed');
+      const { text } = await scanRes.json();
+      const lines = text.split('\n');
       const scannedItems = [];
       const ignoredKeywords = ['total', 'subtotal', 'tax', 'service', 'cash', 'change', 'payment', 'thank', 'visa', 'mastercard', 'card', 'gst', 'sst', 'receipt', 'balance'];
 
