@@ -1129,9 +1129,7 @@ export default function App() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const shareUserId = urlParams.get('share');
-  const shareBillId = urlParams.get('bill');
-  const [authUser, setAuthUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const shareBillId = urlParams.get('bill');;
 
   if (shareUserId && shareBillId) {
     return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
@@ -1210,6 +1208,10 @@ export default function App() {
     setMyIdState(id);
     localStorage.setItem('kautim-identity', JSON.stringify({ personId: id }));
   }, []);
+  // NOW branch — no hooks below this point
+  if (shareUserId && shareBillId) {
+    return <SharedBillView shareUserId={shareUserId} shareBillId={shareBillId} />;
+  }
 
   // Show a loading spinner while Firebase checks if you are logged in
   if (authLoading) {
